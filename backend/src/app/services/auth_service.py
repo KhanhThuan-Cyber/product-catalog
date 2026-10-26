@@ -13,9 +13,10 @@ from app.schemas.auth import (
     UserRegister,
     UserResponse,
 )
+from app.services.base import BaseService
 
 
-class AuthService:
+class AuthService(BaseService):
     """Service xử lý nghiệp vụ xác thực tài khoản và phân quyền."""
 
     def __init__(self) -> None:
@@ -51,14 +52,10 @@ class AuthService:
             is_active=True,
         )
 
-        try:
-            self.user_repo.create(db, new_user)
-            db.commit()
-            db.refresh(new_user)
-            return UserResponse.from_orm_model(new_user)
-        except Exception:
-            db.rollback()
-            raise
+        self.user_repo.create(db, new_user)
+        self.commit_or_rollback(db, conflict_detail="Email này đã được sử dụng trong hệ thống")
+        db.refresh(new_user)
+        return UserResponse.from_orm_model(new_user)
 
     def login(self, db: Session, data: UserLogin) -> TokenResponse:
         """Xác thực đăng nhập và trả về JWT Access Token."""
@@ -94,7 +91,7 @@ class AuthService:
     ) -> UserResponse:
         """Cập nhật thông tin họ và tên cá nhân."""
         user.full_name = data.full_name.strip()
-        db.commit()
+        self.commit_or_rollback(db, conflict_detail="Could not update profile")
         db.refresh(user)
         return UserResponse.from_orm_model(user)
 
@@ -109,5 +106,5 @@ class AuthService:
             )
 
         user.password_hash = get_password_hash(data.new_password)
-        db.commit()
+        self.commit_or_rollback(db, conflict_detail="Could not change password")
         return {"message": "Đổi mật khẩu thành công"}
