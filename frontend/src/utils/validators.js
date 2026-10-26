@@ -49,3 +49,20 @@ export function isValidStock(stock) {
   const num = parseInt(stock, 10)
   return !isNaN(num) && num >= 0
 }
+
+/**
+ * Kiểm tra URL hình ảnh hợp lệ (http/https, tối đa 500 ký tự).
+ * Trả về true nếu chuỗi rỗng (field không bắt buộc).
+ * @param {string} url
+ * @returns {boolean}
+ */
+export function isValidImageUrl(url) {
+  if (!url || !url.trim()) return true // optional field
+  if (url.trim().length > 500) return false
+  try {
+    const parsed = new URL(url.trim())
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}

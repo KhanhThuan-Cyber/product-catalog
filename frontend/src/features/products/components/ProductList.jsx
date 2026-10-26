@@ -1,6 +1,36 @@
 import Button from '../../../components/common/Button'
 import { formatCurrency } from '../../../utils/formatCurrency'
 
+function ProductThumb({ imageUrl, name }) {
+  if (!imageUrl) {
+    return (
+      <div style={{
+        width: 48, height: 48, borderRadius: 6,
+        background: 'var(--bg-card-secondary)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <i className="fa-solid fa-image" style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}></i>
+      </div>
+    )
+  }
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      onError={(e) => {
+        e.currentTarget.style.display = 'none'
+        e.currentTarget.nextSibling.style.display = 'flex'
+      }}
+      style={{
+        width: 48, height: 48, borderRadius: 6,
+        objectFit: 'cover', flexShrink: 0,
+        border: '1px solid var(--border)',
+      }}
+    />
+  )
+}
+
 export default function ProductList({
   products = [],
   categories = [],
@@ -26,6 +56,7 @@ export default function ProductList({
         <thead>
           <tr>
             <th>ID</th>
+            <th>Ảnh</th>
             <th>Tên Sản Phẩm</th>
             <th>Danh Mục</th>
             <th>Giá Bán</th>
@@ -40,6 +71,24 @@ export default function ProductList({
             return (
               <tr key={p.id}>
                 <td><strong>#{p.id}</strong></td>
+
+                {/* Thumbnail */}
+                <td>
+                  <div style={{ position: 'relative' }}>
+                    <ProductThumb imageUrl={p.image_url} name={p.name} />
+                    {/* Fallback div (ẩn mặc định, hiện khi img lỗi) */}
+                    <div style={{
+                      display: 'none',
+                      width: 48, height: 48, borderRadius: 6,
+                      background: 'var(--bg-card-secondary)',
+                      alignItems: 'center', justifyContent: 'center',
+                      position: 'absolute', top: 0, left: 0,
+                    }}>
+                      <i className="fa-solid fa-image-slash" style={{ color: 'var(--text-muted)', fontSize: '1rem' }}></i>
+                    </div>
+                  </div>
+                </td>
+
                 <td>
                   <div>
                     <strong style={{ color: '#f8fafc' }}>{p.name}</strong>
@@ -48,7 +97,7 @@ export default function ProductList({
                         style={{
                           color: 'var(--text-muted)',
                           fontSize: '0.8rem',
-                          maxWidth: 320,
+                          maxWidth: 280,
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
