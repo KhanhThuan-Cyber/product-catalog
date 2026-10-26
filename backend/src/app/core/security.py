@@ -39,3 +39,34 @@ def decode_access_token(token: str) -> dict[str, Any]:
         settings.JWT_SECRET_KEY,
         algorithms=[settings.JWT_ALGORITHM],
     )
+
+
+def create_refresh_token(
+    user_id: int | str,
+    expires_delta: timedelta | None = None,
+) -> tuple[str, str]:
+    """Tạo JWT refresh token với type='refresh', mã định danh jti và thời hạn hết hạn (mặc định 7 ngày)."""
+    jti = str(uuid.uuid4())
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    payload = {
+        "sub": str(user_id),
+        "jti": jti,
+        "type": "refresh",
+        "exp": expire,
+    }
+    token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return token, jti
+
+
+def decode_refresh_token(token: str) -> dict[str, Any]:
+    """Giải mã và kiểm tra loại token phải là refresh token."""
+    payload = jwt.decode(
+        token,
+        settings.JWT_SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM],
+    )
+    if payload.get("type") != "refresh":
+        raise jwt.InvalidTokenError("Token không phải là refresh token hợp lệ")
+    return payload

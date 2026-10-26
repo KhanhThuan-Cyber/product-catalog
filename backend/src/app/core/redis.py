@@ -65,6 +65,9 @@ class NoOpRedisClient:
     def ping(self) -> bool:
         return False
 
+    def eval(self, script: str, numkeys: int, *keys_and_args: Any) -> Any:
+        return 0
+
     def close(self) -> None:
         pass
 
@@ -76,7 +79,7 @@ class NoOpRedisClient:
     ) -> Iterator[str]:
         return iter(())
 
-    # --- Pipeline no-op cho delete_by_prefix ---
+    # --- Pipeline no-op cho delete_by_prefix và WATCH/MULTI ---
     def pipeline(
         self,
         transaction: bool = True,
@@ -86,7 +89,22 @@ class NoOpRedisClient:
 
 
 class _NoOpPipeline:
-    """Pipeline no-op dùng khi Redis sập (cho ``delete_by_prefix``)."""
+    """Pipeline no-op dùng khi Redis sập."""
+
+    def watch(self, *names: str | bytes) -> "_NoOpPipeline":
+        return self
+
+    def unwatch(self) -> "_NoOpPipeline":
+        return self
+
+    def multi(self) -> "_NoOpPipeline":
+        return self
+
+    def exists(self, *names: str | bytes) -> int:
+        return 0
+
+    def set(self, *args: Any, **kwargs: Any) -> "_NoOpPipeline":
+        return self
 
     def delete(self, *names: str | bytes) -> "_NoOpPipeline":
         return self

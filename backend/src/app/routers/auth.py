@@ -7,6 +7,7 @@ from app.core.redis import get_redis
 from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
+    RefreshTokenRequest,
     TokenResponse,
     UserLogin,
     UserProfileUpdate,
@@ -46,13 +47,45 @@ def register(
 def login(
     data: UserLogin,
     db: Session = Depends(get_db),
+    redis: Any = Depends(get_redis),
 ):
     """Xác thực thông tin tài khoản bằng Email và Mật khẩu.
     
-    - Trả về JWT Access Token nếu thông tin chính xác.
+    - Trả về JWT Access Token và Refresh Token nếu thông tin chính xác.
     - Token được sử dụng cho header `Authorization: Bearer <token>`.
     """
-    return auth_service.login(db, data)
+    return auth_service.login(db, data, redis_client=redis)
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cấp mới Access Token bằng Refresh Token (Token Rotation)",
+)
+def refresh(
+    data: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+    redis: Any = Depends(get_redis),
+):
+    """Thực hiện xoay vòng Refresh Token. Nếu phát hiện token đã được dùng,
+    toàn bộ phiên làm việc của tài khoản sẽ bị thu hồi ngay lập tức.
+    """
+    return auth_service.refresh_token(db, data.refresh_token, redis_client=redis)
+
+
+@router.post(
+    "/revoke-all",
+    status_code=status.HTTP_200_OK,
+    summary="Thu hồi toàn bộ phiên đăng nhập của tài khoản",
+)
+def revoke_all(
+    current_user: User = Depends(get_current_user),
+    redis: Any = Depends(get_redis),
+):
+    """Đăng xuất khỏi tất cả các thiết bị bằng cách xóa toàn bộ Refresh Token của user."""
+    count = auth_service.revoke_all_sessions(current_user.id, redis_client=redis)
+    return {"message": f"Đã thu hồi thành công {count} phiên đăng nhập"}
 
 
 @router.post(
