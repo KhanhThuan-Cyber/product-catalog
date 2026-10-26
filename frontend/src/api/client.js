@@ -1,9 +1,14 @@
+import axios from 'axios'
 import { getToken, removeToken, setToken } from '../features/auth/utils/token'
 import { API_PREFIX } from './endpoints'
 import { parseApiError } from './errorHandler'
 
+// Re-export token helpers (backward compat)
 export { getToken, removeToken, setToken }
 
+// ---------------------------------------------------------------------------
+// ApiLogger pub/sub — giữ nguyên interface để ApiLogger component không đổi
+// ---------------------------------------------------------------------------
 let logListeners = []
 
 export function subscribeApiLogs(listener) {
@@ -17,93 +22,113 @@ function broadcastLog(log) {
   logListeners.forEach((listener) => listener(log))
 }
 
-async function request(method, path, body = null, params = null) {
-  // Chuẩn hóa path nếu đã có prefix hoặc chưa
-  const cleanPath = path.startsWith(API_PREFIX) ? path : `${API_PREFIX}${path.startsWith('/') ? path : `/${path}`}`
-  let url = cleanPath
-
-  if (params) {
-    const searchParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        searchParams.append(key, value)
-      }
-    })
-    const queryString = searchParams.toString()
-    if (queryString) {
-      url += `?${queryString}`
-    }
-  }
-
-  const headers = {
+// ---------------------------------------------------------------------------
+// Axios instance
+// ---------------------------------------------------------------------------
+const axiosInstance = axios.create({
+  // Không set baseURL vì path đã bao gồm API_PREFIX (/Thuancyber/...)
+  headers: {
     'Content-Type': 'application/json',
-  }
+  },
+  // Lọc params: bỏ qua null, undefined, và chuỗi rỗng ''
+  // (giữ đúng behavior của fetch cũ — Axios mặc định chỉ bỏ undefined)
+  paramsSerializer: {
+    serialize: (params) => {
+      const clean = Object.fromEntries(
+        Object.entries(params).filter(
+          ([, v]) => v !== null && v !== undefined && v !== ''
+        )
+      )
+      return new URLSearchParams(clean).toString()
+    },
+  },
+})
 
+// ---------------------------------------------------------------------------
+// Request interceptor — inject auth token + khởi tạo log entry
+// ---------------------------------------------------------------------------
+axiosInstance.interceptors.request.use((config) => {
+  // Inject Bearer token nếu có
   const token = getToken()
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+    config.headers['Authorization'] = `Bearer ${token}`
   }
 
-  const startTime = Date.now()
-  const logEntry = {
-    id: Math.random().toString(36).substring(2, 9),
-    timestamp: new Date().toLocaleTimeString(),
-    method,
-    url,
-    requestBody: body,
-    status: null,
-    durationMs: 0,
-    responseBody: null,
-    error: false,
+  // Chuẩn hóa path: thêm API_PREFIX nếu chưa có
+  if (config.url && !config.url.startsWith(API_PREFIX)) {
+    config.url = `${API_PREFIX}${config.url.startsWith('/') ? config.url : `/${config.url}`}`
   }
 
-  try {
-    const options = { method, headers }
-    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      options.body = JSON.stringify(body)
-    }
+  // Gắn metadata để response interceptor hoàn thiện log
+  config.metadata = {
+    startTime: Date.now(),
+    logEntry: {
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toLocaleTimeString(),
+      method: config.method?.toUpperCase() ?? 'GET',
+      url: config.url ?? '',
+      requestBody: config.data ?? null,
+      status: null,
+      durationMs: 0,
+      responseBody: null,
+      error: false,
+    },
+  }
 
-    const res = await fetch(url, options)
-    logEntry.status = res.status
-    logEntry.durationMs = Date.now() - startTime
+  return config
+})
 
-    if (res.status === 204) {
-      logEntry.responseBody = null
+// ---------------------------------------------------------------------------
+// Response interceptor — log, normalize 204, normalize error shape
+// ---------------------------------------------------------------------------
+axiosInstance.interceptors.response.use(
+  // ✅ Success (2xx)
+  (response) => {
+    const { logEntry, startTime } = response.config.metadata ?? {}
+
+    if (logEntry) {
+      logEntry.status = response.status
+      logEntry.durationMs = Date.now() - startTime
+      // 204 No Content — axios trả '' hoặc undefined, normalize về null
+      logEntry.responseBody = response.status === 204 ? null : response.data
       broadcastLog(logEntry)
-      return null
     }
 
-    const data = await res.json().catch(() => null)
-    logEntry.responseBody = data
+    // Giữ nguyên behavior fetch cũ: 204 → null, còn lại → data
+    return response.status === 204 ? null : response.data
+  },
 
-    if (!res.ok) {
-      logEntry.error = true
-      broadcastLog(logEntry)
-      const errorMsg = parseApiError({ data, message: `HTTP Error ${res.status}` })
-      const err = new Error(errorMsg)
-      err.status = res.status
-      err.data = data
-      throw err
-    }
+  // ❌ Error (4xx, 5xx, network failure)
+  (axiosError) => {
+    const { logEntry, startTime } = axiosError.config?.metadata ?? {}
 
-    broadcastLog(logEntry)
-    return data
-  } catch (err) {
-    if (!logEntry.status) {
-      logEntry.status = 'FAILED'
+    if (logEntry) {
+      logEntry.status = axiosError.response?.status ?? 'FAILED'
       logEntry.durationMs = Date.now() - startTime
       logEntry.error = true
-      logEntry.responseBody = { error: err.message }
+      logEntry.responseBody = axiosError.response?.data ?? { error: axiosError.message }
       broadcastLog(logEntry)
     }
-    throw err
-  }
-}
 
+    // Normalize error về cùng shape với fetch cũ:
+    //   err.message  — chuỗi đã được parseApiError
+    //   err.status   — HTTP status code
+    //   err.data     — raw response body từ backend
+    const errorMsg = parseApiError(axiosError)
+    const err = new Error(errorMsg)
+    err.status = axiosError.response?.status ?? null
+    err.data = axiosError.response?.data ?? null
+    return Promise.reject(err)
+  }
+)
+
+// ---------------------------------------------------------------------------
+// Public API — giữ nguyên interface, không cần sửa bất kỳ caller nào
+// ---------------------------------------------------------------------------
 export const api = {
-  get: (path, params) => request('GET', path, null, params),
-  post: (path, body) => request('POST', path, body),
-  put: (path, body) => request('PUT', path, body),
-  patch: (path, body) => request('PATCH', path, body),
-  delete: (path) => request('DELETE', path),
+  get: (path, params) => axiosInstance.get(path, { params }),
+  post: (path, body) => axiosInstance.post(path, body),
+  put: (path, body) => axiosInstance.put(path, body),
+  patch: (path, body) => axiosInstance.patch(path, body),
+  delete: (path) => axiosInstance.delete(path),
 }
