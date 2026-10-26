@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Button from '../../../components/common/Button'
 import { formatCurrency } from '../../../utils/formatCurrency'
 
@@ -8,15 +9,31 @@ export default function ProductCard({
   onViewDetail,
 }) {
   const isOutOfStock = product.stock <= 0
+  const [imgError, setImgError] = useState(false)
 
   return (
     <div className="product-card">
+      {/* Thumbnail */}
       <div
         className="card-thumb"
         onClick={() => onViewDetail && onViewDetail(product)}
         style={{ cursor: 'pointer' }}
       >
-        <i className="fa-solid fa-laptop placeholder-icon"></i>
+        {product.image_url && !imgError ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            onError={() => setImgError(true)}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+            }}
+          />
+        ) : (
+          <i className="fa-solid fa-laptop placeholder-icon"></i>
+        )}
         {categoryName && (
           <span className="card-cat-badge badge badge-active">
             {categoryName}
