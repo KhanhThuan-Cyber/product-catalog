@@ -158,12 +158,14 @@ def test_delete_category_invalidates_cache(mock_db, sample_category):
 
 def test_invalidation_error_does_not_rollback_db(mock_db, sample_category):
     # Khi Redis xóa lỗi, không được làm hỏng thao tác DB đã commit
-    service = CategoryService()
+    # Tạo fake cache riêng biệt để tránh rò rỉ mock sang singleton dùng chung
+    mock_cache = MagicMock(spec=CacheService)
+    mock_cache.delete.side_effect = Exception("Redis connection lost")
+    mock_cache.invalidate_product_caches.side_effect = Exception("Redis connection lost")
+
+    service = CategoryService(cache=mock_cache)
     service.category_repo = MagicMock()
     service.category_repo.get_by_name.return_value = None
-
-    # Mock cache.delete raise exception
-    service.cache.delete = MagicMock(side_effect=Exception("Redis connection lost"))
 
     create_dto = CategoryCreate(name="Phụ kiện", description="Mô tả")
     # Không raise exception

@@ -9,6 +9,7 @@ Cung cấp các thao tác đọc/ghi/xóa dữ liệu cache trong Redis với:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from typing import Any, TypeVar
@@ -22,6 +23,23 @@ from app.core.redis import NoOpRedisClient
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+
+
+def generate_cache_key(prefix: str, **kwargs: Any) -> str:
+    """Tạo cache key có tính tất định bằng cách sắp xếp tham số và băm MD5.
+    
+    Lọc bỏ các tham số có giá trị None để tránh phân mảnh cache giữa việc
+    truyền None và không truyền tham số.
+    """
+    cleaned = {k: v for k, v in kwargs.items() if v is not None}
+    if not cleaned:
+        return prefix
+
+    # Sắp xếp các cặp (key, value) theo key tăng dần để đảm bảo tính tất định
+    sorted_items = sorted(cleaned.items(), key=lambda item: item[0])
+    serialized = json.dumps(sorted_items, default=str, sort_keys=True)
+    param_hash = hashlib.md5(serialized.encode("utf-8")).hexdigest()
+    return f"{prefix}:{param_hash}"
 
 
 class CacheService:
@@ -42,6 +60,24 @@ class CacheService:
         """Tạo key đầy đủ kèm prefix cấu hình nếu có."""
         prefix = settings.CACHE_KEY_PREFIX or ""
         return f"{prefix}{key}"
+
+    @staticmethod
+    def generate_cache_key(prefix: str, **kwargs: Any) -> str:
+        """Helper gọi generate_cache_key từ instance hoặc class."""
+        return generate_cache_key(prefix, **kwargs)
+
+    def invalidate_product_caches(self, product_id: int | None = None) -> None:
+        """Xóa toàn bộ cache danh sách sản phẩm và cache chi tiết nếu có ID.
+        
+        Hàm dùng chung cho cả ProductService và CategoryService khi có mutation,
+        giúp tránh hardcode string prefix giữa các service.
+        """
+        try:
+            self.delete_by_prefix("product:list:")
+            if product_id is not None:
+                self.delete(f"product:detail:{product_id}")
+        except Exception as exc:
+            logger.warning("Lỗi xóa cache sản phẩm: %s", exc)
 
     def get(self, key: str, schema: Any = None) -> Any:
         """Đọc dữ liệu từ cache.

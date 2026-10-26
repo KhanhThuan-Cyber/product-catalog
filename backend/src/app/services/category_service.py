@@ -22,6 +22,8 @@ class CategoryService:
     def _invalidate_cache(self, category_id: int | None = None) -> None:
         """Xóa cache danh mục an toàn sau khi commit DB thành công.
         
+        Đồng thời kích hoạt xóa cache danh sách sản phẩm (cross-invalidation)
+        thông qua hàm chung của cache_service để tránh coupling cứng.
         Lỗi xảy ra tại bước invalidation cache không được làm ảnh hưởng
         hoặc rollback transaction DB đã commit.
         """
@@ -29,6 +31,7 @@ class CategoryService:
             self.cache.delete("category:all")
             if category_id is not None:
                 self.cache.delete(f"category:{category_id}")
+            self.cache.invalidate_product_caches()
         except Exception as exc:
             logger.warning("Lỗi khi xóa cache category: %s", exc)
 
