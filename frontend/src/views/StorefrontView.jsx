@@ -1,6 +1,26 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 
+function ProductImage({ src, alt, className, style }) {
+  const [error, setError] = useState(false)
+  if (!src || error) {
+    return (
+      <div className={className} style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <i className="fa-solid fa-cube placeholder-icon"></i>
+      </div>
+    )
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setError(true)}
+      style={{ ...style, objectFit: 'cover', width: '100%', height: '100%' }}
+    />
+  )
+}
+
 export default function StorefrontView({ categories, onAddToCart, showToast }) {
   const [products, setProducts] = useState([])
   const [total, setTotal] = useState(0)
@@ -189,8 +209,12 @@ export default function StorefrontView({ categories, onAddToCart, showToast }) {
               const catName = categories.find((c) => c.id === p.category_id)?.name || 'Sản phẩm'
               return (
                 <div key={p.id} className="product-card">
-                  <div className="card-thumb">
-                    <i className="fa-solid fa-cube placeholder-icon"></i>
+                  <div className="card-thumb" onClick={() => setViewProduct(p)} style={{ cursor: 'pointer' }}>
+                    <ProductImage
+                      src={p.image_url}
+                      alt={p.name}
+                      style={{ borderRadius: 'inherit' }}
+                    />
                     <span className="card-cat-badge">{catName}</span>
                   </div>
 
@@ -277,6 +301,26 @@ export default function StorefrontView({ categories, onAddToCart, showToast }) {
               <button className="modal-close" onClick={() => setViewProduct(null)}>✕</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Ảnh sản phẩm trong modal chi tiết */}
+              {viewProduct.image_url && (
+                <div style={{
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-card-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 200,
+                }}>
+                  <img
+                    src={viewProduct.image_url}
+                    alt={viewProduct.name}
+                    style={{ maxHeight: 200, maxWidth: '100%', objectFit: 'contain' }}
+                    onError={(e) => { e.currentTarget.parentElement.style.display = 'none' }}
+                  />
+                </div>
+              )}
               <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
                 {viewProduct.name}
               </div>
@@ -296,7 +340,7 @@ export default function StorefrontView({ categories, onAddToCart, showToast }) {
               </div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                 <div><i className="fa-solid fa-warehouse"></i> Tồn kho: <strong>{viewProduct.stock} cái</strong></div>
-                <div><i className="fa-solid fa-calendar"></i> Ngày đăng: {new Date(viewProduct.create_at).toLocaleString('vi-VN')}</div>
+                <div><i className="fa-solid fa-calendar"></i> Ngày đăng: {new Date(viewProduct.created_at).toLocaleString('vi-VN')}</div>
               </div>
             </div>
             <div className="modal-footer">
