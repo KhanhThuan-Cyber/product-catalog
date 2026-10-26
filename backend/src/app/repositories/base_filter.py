@@ -1,54 +1,51 @@
-from typing import Any
+import re
+from typing import Any, Sequence
 from sqlalchemy import ColumnElement, Select, or_
 
 
 class BaseFilter:
-    """Lớp trừu tượng cơ sở cung cấp các cơ chế xây dựng truy vấn SQL động theo hướng OOP.
-    
-    Được thiết kế để tái sử dụng cho mọi Model/Entity trong hệ thống:
-    - `apply_search`: Tìm kiếm mờ không phân biệt hoa thường (ilike).
-    - `apply_exact`: Lọc chính xác giá trị (equality).
-    - `apply_range`: Lọc theo khoảng giá trị linh hoạt [min_val, max_val].
-    - `apply_sort`: Sắp xếp an toàn dựa trên Whitelist mapping (chống SQL Injection).
-    """
+    """Bộ công cụ hỗ trợ xây dựng truy vấn lọc và sắp xếp động cho SQLAlchemy 2.0."""
+
+    @staticmethod
+    def _escape_like_term(term: str) -> str:
+        """Escape ký tự đặc biệt % và _ để tránh lỗi wildcard ngoài ý muốn."""
+        return re.sub(r"([%_])", r"\\\1", term)
 
     @staticmethod
     def apply_search(
-        stmt: Select,
+        stmt: Select[Any],
         search_term: str | None,
-        columns: list[ColumnElement],
-    ) -> Select:
-        """Áp dụng tìm kiếm không phân biệt chữ hoa/thường (ilike) trên danh sách cột."""
-        if not search_term or not search_term.strip():
+        columns: Sequence[ColumnElement[Any]],
+    ) -> Select[Any]:
+        """Tìm kiếm ilike an toàn trên danh sách cột."""
+        if not search_term or not search_term.strip() or not columns:
             return stmt
 
-        keyword = f"%{search_term.strip()}%"
+        clean_term = BaseFilter._escape_like_term(search_term.strip())
+        keyword = f"%{clean_term}%"
         conditions = [col.ilike(keyword) for col in columns]
-
-        if not conditions:
-            return stmt
 
         return stmt.where(or_(*conditions))
 
     @staticmethod
     def apply_exact(
-        stmt: Select,
-        column: ColumnElement,
+        stmt: Select[Any],
+        column: ColumnElement[Any],
         value: Any | None,
-    ) -> Select:
-        """Áp dụng lọc chính xác theo một giá trị (nếu value khác None)."""
-        if value is not None:
-            return stmt.where(column == value)
-        return stmt
+    ) -> Select[Any]:
+        """Lọc chính xác theo giá trị nếu value khác None."""
+        if value is None:
+            return stmt
+        return stmt.where(column == value)
 
     @staticmethod
     def apply_range(
-        stmt: Select,
-        column: ColumnElement,
+        stmt: Select[Any],
+        column: ColumnElement[Any],
         min_val: Any | None = None,
         max_val: Any | None = None,
-    ) -> Select:
-        """Áp dụng lọc theo khoảng giá trị [min_val, max_val] (nếu có giá trị)."""
+    ) -> Select[Any]:
+        """Lọc theo khoảng [min_val, max_val]."""
         if min_val is not None:
             stmt = stmt.where(column >= min_val)
         if max_val is not None:
@@ -57,29 +54,22 @@ class BaseFilter:
 
     @staticmethod
     def apply_sort(
-        stmt: Select,
+        stmt: Select[Any],
         sort_by: Any,
         order: Any,
-        whitelist: dict[Any, ColumnElement],
-        default_column: ColumnElement,
-    ) -> Select:
-        """Áp dụng sắp xếp an toàn theo whitelist mapping.
-        
-        Args:
-            stmt: Câu lệnh Select của SQLAlchemy.
-            sort_by: Tên trường cần sắp xếp (hoặc Enum).
-            order: Chiều sắp xếp ('asc' hoặc 'desc' hoặc Enum).
-            whitelist: Bảng map từ tên trường sang thuộc tính ColumnElement thực tế của Model.
-            default_column: Cột sắp xếp mặc định nếu sort_by không tìm thấy.
-        """
+        whitelist: dict[Any, ColumnElement[Any]],
+        default_column: ColumnElement[Any],
+    ) -> Select[Any]:
+        """Sắp xếp an toàn dựa trên Whitelist mapping chống SQL Injection."""
         field_key = sort_by.value if hasattr(sort_by, "value") else sort_by
         order_key = (
             order.value
             if hasattr(order, "value")
-            else str(order).lower()
-            if order
-            else "asc"
+            else (str(order).lower() if order is not None else "asc")
         )
+
+        if order_key not in {"asc", "desc"}:
+            raise ValueError(f"Tham số order không hợp lệ: '{order}'. Chỉ chấp nhận 'asc' hoặc 'desc'.")
 
         column = whitelist.get(field_key, default_column)
 

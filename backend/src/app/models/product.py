@@ -17,8 +17,9 @@ class Product(Base):
     category_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False
     )
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    create_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(

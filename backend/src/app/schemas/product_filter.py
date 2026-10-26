@@ -7,18 +7,12 @@ from app.models.product import Product
 from app.repositories.base_filter import BaseFilter
 from app.schemas.sorting import ProductSortBy, SortOrder
 
-# Bảng Whitelist mapping an toàn từ enum/chuỗi người dùng sang cột SQLAlchemy thực tế
-PRODUCT_SORT_WHITELIST: dict[Any, ColumnElement] = {
-    "id": Product.id,
-    "price": Product.price,
-    "created_at": Product.create_at,  # Map tên trường chuẩn sang cột cơ sở dữ liệu create_at
-    "name": Product.name,
-    ProductSortBy.id: Product.id,
-    ProductSortBy.price: Product.price,
-    ProductSortBy.created_at: Product.create_at,
-    ProductSortBy.name: Product.name,
+PRODUCT_SORT_WHITELIST: dict[str, ColumnElement] = {
+    ProductSortBy.id.value: Product.id,
+    ProductSortBy.price.value: Product.price,
+    ProductSortBy.created_at.value: Product.created_at,
+    ProductSortBy.name.value: Product.name,
 }
-
 
 class ProductFilter(BaseModel):
     """Value Object đóng gói các tiêu chí tìm kiếm, lọc và sắp xếp cho Product.
