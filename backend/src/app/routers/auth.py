@@ -1,7 +1,9 @@
+from typing import Any
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, oauth2_scheme
+from app.core.redis import get_redis
 from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
@@ -51,6 +53,20 @@ def login(
     - Token được sử dụng cho header `Authorization: Bearer <token>`.
     """
     return auth_service.login(db, data)
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+    summary="Đăng xuất và thu hồi Access Token hiện tại",
+)
+def logout(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user),
+    redis: Any = Depends(get_redis),
+):
+    """Đăng xuất tài khoản bằng cách đưa access token hiện tại vào blacklist Redis."""
+    return auth_service.logout(token, redis)
 
 
 @router.get(

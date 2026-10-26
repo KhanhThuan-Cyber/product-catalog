@@ -15,6 +15,9 @@ from app.core import redis as redis_module
 from app.core.redis import get_redis
 from app.main import app
 
+# Vô hiệu hóa startup event (kết nối PostgreSQL init_database) khi chạy test suite
+app.router.on_startup = []
+
 
 def _make_fake_redis() -> fakeredis.FakeStrictRedis:
     """Tạo một fakeredis client mới, cách ly hoàn toàn (server riêng)."""

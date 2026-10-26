@@ -1,7 +1,15 @@
+import logging
+from datetime import datetime, timezone
+from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.security import create_access_token, get_password_hash, verify_password
+from app.core.security import (
+    create_access_token,
+    decode_access_token,
+    get_password_hash,
+    verify_password,
+)
 from app.models.user import User
 from app.repositories.role_repository import RoleRepository
 from app.repositories.user_repository import UserRepository
@@ -14,6 +22,8 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services.base import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService(BaseService):
@@ -81,6 +91,24 @@ class AuthService(BaseService):
         )
 
         return TokenResponse(access_token=access_token, token_type="bearer")
+
+    def logout(self, token: str, redis_client: Any) -> dict[str, str]:
+        """Thu hồi access token hiện tại bằng cách thêm mã định danh jti vào blacklist Redis."""
+        try:
+            payload = decode_access_token(token)
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+            if jti and exp:
+                now = datetime.now(timezone.utc).timestamp()
+                remaining_ttl = int(exp - now)
+                # Chỉ đưa vào blacklist nếu token chưa hết hạn tự nhiên
+                if remaining_ttl > 0:
+                    redis_client.set(f"blacklist:{jti}", "revoked", ex=remaining_ttl)
+                    logger.info("Đã đưa token jti=%s vào blacklist (ttl=%d giây)", jti, remaining_ttl)
+        except Exception as exc:
+            logger.warning("Lỗi thu hồi token khi đăng xuất: %s", exc)
+
+        return {"message": "Đăng xuất thành công"}
 
     def get_me(self, current_user: User) -> UserResponse:
         """Trả về thông tin chi tiết của người dùng hiện tại."""

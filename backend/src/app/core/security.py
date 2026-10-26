@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
+import uuid
 import jwt
 from passlib.context import CryptContext
 
@@ -20,11 +21,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
-    """Tạo JWT access token chứa payload dữ liệu và thời hạn hết hạn."""
+    """Tạo JWT access token chứa payload dữ liệu, mã định danh duy nhất (jti) và thời hạn hết hạn."""
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
+    if "jti" not in to_encode:
+        to_encode["jti"] = str(uuid.uuid4())
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
