@@ -1,5 +1,6 @@
 import logging
-from sqlalchemy import Engine, inspect, text
+from sqlalchemy import inspect, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash
