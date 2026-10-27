@@ -1,10 +1,14 @@
+from typing import Any
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, oauth2_scheme
+from app.core.rate_limiter import rate_limit_login, rate_limit_register
+from app.core.redis import get_redis
 from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
+    RefreshTokenRequest,
     TokenResponse,
     UserLogin,
     UserProfileUpdate,
@@ -22,6 +26,7 @@ auth_service = AuthService()
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Đăng ký tài khoản người dùng mới",
+    dependencies=[Depends(rate_limit_register)],
 )
 def register(
     data: UserRegister,
@@ -31,6 +36,7 @@ def register(
     
     - Mặc định được gán vai trò: `user`.
     - Mật khẩu được băm an toàn bằng BCrypt trước khi lưu.
+    - Được bảo vệ bởi Fixed-Window Rate Limiter.
     """
     return auth_service.register(db, data)
 
@@ -40,17 +46,65 @@ def register(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     summary="Đăng nhập tài khoản và nhận Access Token",
+    dependencies=[Depends(rate_limit_login)],
 )
 def login(
     data: UserLogin,
     db: Session = Depends(get_db),
+    redis: Any = Depends(get_redis),
 ):
     """Xác thực thông tin tài khoản bằng Email và Mật khẩu.
     
-    - Trả về JWT Access Token nếu thông tin chính xác.
+    - Trả về JWT Access Token và Refresh Token nếu thông tin chính xác.
     - Token được sử dụng cho header `Authorization: Bearer <token>`.
+    - Được bảo vệ bởi Fixed-Window Rate Limiter theo cả IP và Email.
     """
-    return auth_service.login(db, data)
+    return auth_service.login(db, data, redis_client=redis)
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cấp mới Access Token bằng Refresh Token (Token Rotation)",
+)
+def refresh(
+    data: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+    redis: Any = Depends(get_redis),
+):
+    """Thực hiện xoay vòng Refresh Token. Nếu phát hiện token đã được dùng,
+    toàn bộ phiên làm việc của tài khoản sẽ bị thu hồi ngay lập tức.
+    """
+    return auth_service.refresh_token(db, data.refresh_token, redis_client=redis)
+
+
+@router.post(
+    "/revoke-all",
+    status_code=status.HTTP_200_OK,
+    summary="Thu hồi toàn bộ phiên đăng nhập của tài khoản",
+)
+def revoke_all(
+    current_user: User = Depends(get_current_user),
+    redis: Any = Depends(get_redis),
+):
+    """Đăng xuất khỏi tất cả các thiết bị bằng cách xóa toàn bộ Refresh Token của user."""
+    count = auth_service.revoke_all_sessions(current_user.id, redis_client=redis)
+    return {"message": f"Đã thu hồi thành công {count} phiên đăng nhập"}
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+    summary="Đăng xuất và thu hồi Access Token hiện tại",
+)
+def logout(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user),
+    redis: Any = Depends(get_redis),
+):
+    """Đăng xuất tài khoản bằng cách đưa access token hiện tại vào blacklist Redis."""
+    return auth_service.logout(token, redis)
 
 
 @router.get(
