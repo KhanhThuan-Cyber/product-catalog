@@ -1,292 +1,162 @@
-# Backend — Product Management API
+# Backend — Product Catalog API Documentation
 
-Hệ thống Backend RESTful API hiệu năng cao được xây dựng trên nền tảng **FastAPI (Python 3.11+)**, **SQLAlchemy ORM 2.0**, **Pydantic v2** và hệ thống phân quyền theo vai trò (RBAC - Role-Based Access Control) kết hợp cơ chế tự động hóa khởi tạo Database (Auto-migration & Data Bootstrapping).
+Tài liệu kỹ thuật chuyên sâu về phân hệ Backend RESTful API của hệ thống **Product Catalog**, được xây dựng trên nền tảng **FastAPI (Python 3.12)**, **SQLAlchemy ORM 2.0**, **Pydantic v2**, **Redis 7** và **PostgreSQL 16**.
 
 ---
 
-## 1. Kiến trúc phân tầng (Layered Architecture)
+## 1. Kiến trúc Phân tầng 3 Lớp (Layered Architecture)
 
-Backend được tổ chức theo mô hình kiến trúc phân tầng 3 lớp chuẩn doanh nghiệp (**Layered / Onion Architecture**), phân tách rõ ràng trách nhiệm giữa các tầng:
+Hệ thống tuân thủ nghiêm ngặt nguyên lý Single Responsibility (SRP) và mô hình phân tầng tiêu chuẩn doanh nghiệp:
 
-```
-FastAPI Client / Frontend
-        │
-        ▼ (HTTP Request / JSON)
+```text
+HTTP Request (Client / Browser / Swagger)
+                    │
+                    ▼
 ┌────────────────────────────────────────────────────────┐
-│ 1. API & ROUTER LAYER (FastAPI Routers)                │
-│    - routers/auth.py, users.py, products.py, ...       │
-│    - Dependency Injection: get_db, require_admin       │
-│    - Pydantic Validation & Serialization (Schemas)     │
+│ 1. API & ROUTER TIER (FastAPI Routers)                 │
+│    - routers/products.py, categories.py, auth.py, ...  │
+│    - Xử lý tham số Query, Path, Body                   │
+│    - Dependency Injection: get_db, RoleChecker         │
+│    - Xác thực DTOs đầu vào qua Pydantic v2             │
 └───────────────────────┬────────────────────────────────┘
-                        │
-                        ▼ (Data Transfer Objects - DTOs)
+                        │ Data Transfer Objects (DTOs)
+                        ▼
 ┌────────────────────────────────────────────────────────┐
-│ 2. SERVICE LAYER (Business Logic)                      │
+│ 2. SERVICE TIER (Business Logic & Cache Coordination)  │
 │    - services/product_service.py, category_service.py  │
-│    - Kiểm tra logic nghiệp vụ, transaction management │
+│    - Điều phối Cache-Aside: Kiểm tra RAM Redis         │
+│    - Quản lý Transaction (Commit / Rollback)           │
+│    - Invalidate cache khi có thao tác Create/Update/Del│
 └───────────────────────┬────────────────────────────────┘
-                        │
-                        ▼ (SQLAlchemy Queries)
+                        │ Domain Entities & Query Filters
+                        ▼
 ┌────────────────────────────────────────────────────────┐
-│ 3. REPOSITORY LAYER (Data Access Object - DAO)         │
-│    - repositories/base_repository.py (Generic OOP)     │
-│    - product_repository.py, role_repository.py, ...   │
-│    - Xử lý phân trang, lọc ilike, whitelist sort      │
+│ 3. REPOSITORY TIER (Data Access Layer)                 │
+│    - repositories/product_repository.py, base_repo.py  │
+│    - Áp dụng BaseFilter (ILIKE search, price range)   │
+│    - Whitelist sort chống SQL Injection               │
+│    - Generic Pagination query execution                │
 └───────────────────────┬────────────────────────────────┘
-                        │
-                        ▼ (SQLAlchemy ORM Models)
+                        │ SQLAlchemy ORM Mapped Models
+                        ▼
 ┌────────────────────────────────────────────────────────┐
-│ 4. DATABASE & INFRASTRUCTURE LAYER                     │
-│    - models/user.py, role.py, category.py, product.py  │
-│    - core/init_db.py (Auto-upgrade schema & seeding)   │
-│    - SQLite (Dev/Test) / PostgreSQL (Production)       │
+│ 4. DATABASE & INFRASTRUCTURE TIER                      │
+│    - models/product.py, category.py, user.py, role.py  │
+│    - Redis 7 (In-Memory Cache & JTI Blacklist)         │
+│    - PostgreSQL 16 (Relational Persistent Storage)     │
 └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Cấu trúc thư mục chi tiết
+## 2. Cấu trúc Thư mục Chi tiết
 
 ```text
 backend/
-├── src/
-│   └── app/
-│       ├── main.py                     # Entry point FastAPI, CORS & startup event
-│       ├── api/
-│       │   └── deps.py                 # Dependency Injection: get_db, JWT auth & RoleChecker
-│       ├── core/
-│       │   ├── config.py               # Quản lý biến môi trường (.env) bằng Pydantic Settings
-│       │   ├── database.py             # SQLAlchemy Engine, SessionLocal & pool_pre_ping
-│       │   ├── init_db.py              # Tự động hóa nâng cấp schema và nạp Super Admin mặc định
-│       │   └── security.py             # Hashing mật khẩu (BCrypt) & ký/giải mã JWT token
-│       ├── models/                     # SQLAlchemy Declarative Models
-│       │   ├── base.py                 # Base declarative class
-│       │   ├── role.py                 # Entity Role (id, name, description, created_at)
-│       │   ├── user.py                 # Entity User (id, email, password_hash, role_id, is_active)
-│       │   ├── category.py             # Entity Category (id, name, description, created_at)
-│       │   └── product.py              # Entity Product (id, name, price, stock, category_id, is_active)
-│       ├── schemas/                    # Pydantic v2 Data Transfer Objects (DTOs)
-│       │   ├── auth.py                 # UserRegister, UserLogin, UserResponse, RoleCreate, RoleResponse
-│       │   ├── pagination.py           # Generic PaginatedResponse[T], PaginationParams
-│       │   ├── category.py             # CategoryCreate, CategoryUpdate, CategoryResponse
-│       │   └── product.py              # ProductCreate, ProductUpdate, ProductPatch, ProductResponse
-│       ├── repositories/               # Tầng truy xuất dữ liệu (Data Access Layer)
-│       │   ├── base_repository.py      # Lớp cơ sở trừu tượng hỗ trợ phân trang generic paginate()
-│       │   ├── role_repository.py      # Truy vấn Role: get_by_name, list_all, create
-│       │   ├── user_repository.py      # Truy vấn User: get_by_email, update_status, update_role
-│       │   ├── category_repository.py  # Truy vấn Category: get_by_name, list_all, create, delete
-│       │   └── product_repository.py   # Truy vấn Product: lọc search, category, khoảng giá, safe sort
-│       ├── services/                   # Tầng nghiệp vụ xử lý logic
-│       │   ├── category_service.py     # Ràng buộc toàn vẹn dữ liệu, kiểm tra không xóa danh mục có sản phẩm
-│       │   └── product_service.py      # Xử lý cập nhật toàn phần (PUT) và từng phần (PATCH)
-│       └── routers/                    # Tầng API Endpoints
-│           ├── auth.py                 # /Thuancyber/auth (Register, Login, Me, Change Password)
-│           ├── users.py                # /Thuancyber/users (List, Create User, Status, Role, Roles CRUD)
-│           ├── categories.py           # /Thuancyber/categories (CRUD danh mục)
-│           └── products.py             # /Thuancyber/products (CRUD sản phẩm + Filter + Paginate)
-├── tests/                              # Bộ kiểm thử tích hợp (Pytest)
-│   ├── test_auth_endpoints.py          # Kiểm thử Auth, RBAC, Profile, Admin User & Role Creation
-│   └── test_products_categories.py     # Kiểm thử CRUD Category và Product
-└── requirements.txt                    # Danh sách thư viện phụ thuộc
+├── Dockerfile                      # Image container python:3.12-slim
+├── requirements.txt                # Thư viện phụ thuộc
+├── alembic.ini                     # Cấu hình công cụ di chuyển dữ liệu Alembic
+├── alembic/                        # Các bản ghi migration cơ sở dữ liệu
+│   ├── env.py                      # Cấu hình kết nối DB và Base.metadata
+│   └── versions/                   # Lịch sử các file migration (.py)
+├── seed.py                         # Script nạp 120 sản phẩm mẫu độc lập
+├── run-tests.ps1                   # Script thực thi toàn bộ 63 kiểm thử Pytest
+├── tests/                          # Bộ kiểm thử tự động
+│   ├── conftest.py                 # Fixture test, mock redis & in-memory sqlite
+│   ├── test_auth_endpoints.py      # Test đăng ký, đăng nhập, đổi mật khẩu
+│   ├── test_auth_blacklist.py      # Test JTI token blacklist khi logout
+│   ├── test_product_cache.py       # Test Cache Hit, Cache Miss, Invalidation
+│   ├── test_category_cache.py      # Test cache danh mục
+│   ├── test_product_filter.py      # Test bộ lọc, khoảng giá, whitelist sort
+│   ├── test_rate_limit.py          # Test Fixed-Window Rate Limiter
+│   └── test_pagination_schema.py   # Test schema PaginatedResponse generic
+└── src/app/
+    ├── main.py                     # Entry point FastAPI, CORS, mount routers
+    ├── api/
+    │   └── deps.py                 # Dependency: get_db, get_current_user, RoleChecker
+    ├── core/
+    │   ├── config.py               # Pydantic Settings đọc cấu hình từ .env
+    │   ├── database.py             # Engine SQLAlchemy, SessionLocal, pool_pre_ping
+    │   ├── redis.py                # Redis client singleton & NoOp graceful degradation
+    │   ├── rate_limiter.py         # Bộ giới hạn tần suất request theo IP qua Redis
+    │   ├── security.py             # BCrypt hashing, JWT encode/decode, token rotation
+    │   ├── init_db.py              # Tự động hóa tạo bảng, seed role & admin mặc định
+    │   └── seed.py                 # Hàm sinh 120 sản phẩm mẫu (idempotent)
+    ├── models/                     # Declarative ORM Models
+    │   ├── base.py                 # Base declarative
+    │   ├── role.py                 # Bảng roles (admin, user, custom)
+    │   ├── user.py                 # Bảng users (email, password_hash, role_id)
+    │   ├── category.py             # Bảng categories (name unique, description)
+    │   └── product.py              # Bảng products (price, stock, category_id FK)
+    ├── schemas/                    # Pydantic v2 DTOs
+    │   ├── auth.py                 # Schemas cho xác thực, login, register, token
+    │   ├── pagination.py           # PaginatedResponse[T], PaginationParams
+    │   ├── product_filter.py       # ProductFilter (validate min_price <= max_price)
+    │   ├── sorting.py              # ProductSortBy, SortOrder Enums
+    │   ├── category.py             # CategoryCreate, CategoryUpdate, CategoryResponse
+    │   └── product.py              # ProductCreate, ProductUpdate, ProductPatch, ProductResponse
+    ├── repositories/               # Tầng truy vấn dữ liệu ORM
+    │   ├── base_repository.py      # Repository trừu tượng hỗ trợ generic paginate
+    │   ├── base_filter.py          # Logic áp dụng search ilike, range, safe sort
+    │   ├── category_repository.py  # Query Category (get_by_name, delete)
+    │   └── product_repository.py   # Query Product (lọc theo filter_params, paginate)
+    └── services/                   # Tầng xử lý nghiệp vụ & cache
+        ├── base.py                 # BaseService hỗ trợ commit/rollback an toàn
+        ├── cache_service.py        # Quản lý đọc/ghi/xóa cache Redis qua SCAN pipeline
+        ├── auth_service.py         # Nghiệp vụ xác thực, token blacklist, rate limit
+        ├── category_service.py     # Ràng buộc khóa ngoại khi xóa danh mục
+        └── product_service.py      # CRUD sản phẩm kết hợp Cache-Aside
 ```
 
 ---
 
-## 3. Tự động hóa Khởi tạo Database (`init_db.py`)
+## 3. Cơ chế Caching & Phòng vệ sập nguồn (Redis & Graceful Fallback)
 
-Khi server Backend khởi động (thông qua sự kiện `@app.on_event("startup")` trong [main.py](file:///d:/Product-Catalog/backend/src/app/main.py)), hàm `init_database()` được tự động thực thi với các cơ chế đảm bảo an toàn:
+### A. Chiến lược Cache-Aside (Lazy Loading)
+- **Đọc danh sách sản phẩm (`GET /products`):**
+  - Tham số query (`page`, `page_size`, `search`, `category_id`, `min_price`, `max_price`, `sort_by`, `order`) được lọc bỏ `None`, sắp xếp key tăng dần và băm MD5 để tạo key tất định dạng: `product:list:<md5_hash>`.
+  - Nếu có trong Redis $\rightarrow$ Trả về dữ liệu ngay lập tức (**Cache HIT**).
+  - Nếu không có $\rightarrow$ Truy vấn PostgreSQL $\rightarrow$ Ghi vào Redis với TTL $\rightarrow$ Trả về Client (**Cache MISS**).
+- **Đọc chi tiết sản phẩm (`GET /products/{id}`):**
+  - Cache theo key `product:detail:{id}` với TTL tương ứng.
+- **Xóa Cache (Invalidation):**
+  - Khi có thao tác Tạo / Sửa / Xóa sản phẩm: Hệ thống gọi `cache_service.invalidate_product_caches(product_id)`.
+  - Thay vì dùng lệnh `KEYS *` gây treo toàn bộ cụm Redis, service sử dụng lệnh `SCAN` kết hợp `pipeline.delete` để xóa an toàn theo từng khối (batch 100 keys).
 
-1. **Auto Upgrade Schema:**
-   - Tự động kiểm tra cấu trúc bảng `users` hiện hữu trong cơ sở dữ liệu.
-   - Nếu phát hiện cột `password_hash` cũ có kích thước `< 255` ký tự, tự động thực thi lệnh `ALTER TABLE users ALTER COLUMN password_hash TYPE VARCHAR(255)` để tương thích chuẩn mã hóa mật khẩu hiện đại mà không làm mất dữ liệu.
-   - Tự động gọi `Base.metadata.create_all()` để tạo tất cả các bảng chưa tồn tại (`roles`, `users`, `categories`, `products`).
-2. **Idempotent Role Bootstrapping:**
-   - Kiểm tra và tự động khởi tạo 2 vai trò cơ sở: `admin` (Quản trị viên toàn quyền) và `user` (Khách hàng mua sắm) nếu chưa có trong DB.
-3. **Idempotent Super Admin Bootstrapping:**
-   - Kiểm tra xem hệ thống đã có tài khoản Admin chưa. Nếu chưa có, tự động tạo tài khoản Super Admin mặc định:
-     - **Email:** `admin@system.local`
-     - **Mật khẩu:** `Admin@123456`
-     - **Vai trò:** `admin` (Role ID: 1)
-
----
-
-## 4. Danh mục API Endpoints chi tiết (Prefix: `/Thuancyber`)
-
-Tất cả các route Backend được định tuyến thống nhất dưới tiền tố `/Thuancyber`.
-
-### 4.1. Phân hệ Authentication & Hồ sơ cá nhân (`/Thuancyber/auth`)
-
-| Phương thức | Endpoint | Yêu cầu quyền | Mô tả chi tiết |
-|---|---|---|---|
-| `POST` | `/auth/register` | Công khai | Đăng ký tài khoản khách hàng mới (mặc định role `user`). |
-| `POST` | `/auth/login` | Công khai | Đăng nhập bằng Email & Mật khẩu, trả về JWT Access Token. |
-| `GET` | `/auth/me` | Bearer Token | Lấy thông tin tài khoản người dùng hiện đang đăng nhập. |
-| `PATCH` | `/auth/me` | Bearer Token | Cập nhật thông tin cá nhân (họ và tên hiển thị). |
-| `POST` | `/auth/change-password` | Bearer Token | Đổi mật khẩu cá nhân (yêu cầu mật khẩu cũ chính xác). |
-
-#### Ví dụ Body Đăng Ký (`POST /Thuancyber/auth/register`):
-```json
-{
-  "email": "customer@example.com",
-  "password": "SecurePassword@123",
-  "full_name": "Nguyễn Văn A"
-}
-```
-
-#### Ví dụ Response Đăng Nhập (`POST /Thuancyber/auth/login`):
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer"
-}
-```
+### B. Graceful Degradation (Phục hồi an toàn)
+Trong module [`core/redis.py`](file:///d:/Product-Catalog/backend/src/app/core/redis.py), nếu Redis không phản hồi hoặc bị sập, một instance `NoOpRedisClient` sẽ được sử dụng thay thế. Mọi lệnh `get()` trả về `None` (coi như Cache Miss) và hệ thống chuyển thẳng truy vấn xuống PostgreSQL, giúp ứng dụng không bao giờ bị dừng hoạt động.
 
 ---
 
-### 4.2. Phân hệ Quản lý Người dùng & Vai trò (`/Thuancyber/users`)
+## 4. Xác thực & Bảo mật (JWT, RTR, JTI Blacklist, Rate Limiting)
 
-| Phương thức | Endpoint | Yêu cầu quyền | Mô tả chi tiết |
-|---|---|---|---|
-| `GET` | `/users` | `Admin` | Lấy danh sách toàn bộ người dùng trong hệ thống. |
-| `POST` | `/users` | `Admin` | Admin tạo trực tiếp tài khoản mới và chỉ định vai trò (`role_id`). |
-| `PATCH` | `/users/{id}/status` | `Admin` | Khóa hoặc mở khóa tài khoản người dùng (`is_active: bool`). |
-| `PATCH` | `/users/{id}/role` | `Admin` | Thay đổi vai trò người dùng (thăng cấp / giáng cấp vai trò). |
-| `GET` | `/users/roles` | Mọi người dùng | Lấy danh sách tất cả các vai trò khả dụng trong hệ thống. |
-| `POST` | `/users/roles` | `Admin` | **Tạo vai trò mới** động trong hệ thống (manager, staff, editor...). |
-
-#### Ví dụ Body Tạo Role mới (`POST /Thuancyber/users/roles`):
-```json
-{
-  "name": "manager",
-  "description": "Quản lý sản phẩm, đơn hàng và danh mục"
-}
-```
+1. **Băm mật khẩu:** Sử dụng **BCrypt** với chuỗi Salt ngẫu nhiên và Work factor tiêu chuẩn, chống lại các cuộc tấn công Rainbow Table.
+2. **Access Token & Refresh Token:**
+   - Access Token có thời hạn 30 phút, chứa trường `jti` (JWT ID dạng UUID4).
+   - Refresh Token có thời hạn 7 ngày, áp dụng cơ chế **Refresh Token Rotation (RTR)**: Mỗi lần xin cấp lại Access Token mới, Refresh Token cũ sẽ bị hủy và thay bằng token mới.
+3. **Đăng xuất an toàn (JTI Blacklist):**
+   - Khi gọi `POST /auth/logout`, backend đọc `jti` từ token, tính toán thời gian sống còn lại (`TTL = exp - now`) và ghi vào Redis dạng: `blacklist:{jti}`.
+   - Dependency `get_current_user` sẽ từ chối ngay lập tức bất kỳ token nào có `jti` nằm trong danh sách đen này.
+4. **Giới hạn tần suất (Fixed-Window Rate Limiting):**
+   - Áp dụng trên các endpoint nhạy cảm như `/auth/login` (tối đa 10 lần / 15 phút) và `/auth/register` (tối đa 5 lần / 1 giờ) dựa trên địa chỉ IP của Client thông qua Redis key có TTL.
 
 ---
 
-### 4.3. Phân hệ Danh mục Sản phẩm (`/Thuancyber/categories`)
+## 5. Hướng dẫn Khởi chạy & Kiểm thử Backend
 
-| Phương thức | Endpoint | Yêu cầu quyền | Mô tả chi tiết |
-|---|---|---|---|
-| `GET` | `/categories` | Công khai | Lấy danh sách toàn bộ danh mục sản phẩm. |
-| `GET` | `/categories/{id}` | Công khai | Xem thông tin chi tiết một danh mục. |
-| `POST` | `/categories` | `Admin` | Tạo danh mục mới (kiểm tra không trùng tên). |
-| `PUT` | `/categories/{id}` | `Admin` | Cập nhật tên và mô tả danh mục. |
-| `DELETE` | `/categories/{id}` | `Admin` | Xóa danh mục (chặn xóa nếu danh mục đang có sản phẩm). |
-
----
-
-### 4.4. Phân hệ Sản phẩm (`/Thuancyber/products`)
-
-| Phương thức | Endpoint | Yêu cầu quyền | Mô tả chi tiết |
-|---|---|---|---|
-| `GET` | `/products` | Công khai | Danh sách sản phẩm (có tìm kiếm, lọc, sắp xếp, phân trang). |
-| `GET` | `/products/{id}` | Công khai | Xem thông tin chi tiết sản phẩm theo ID. |
-| `POST` | `/products` | `Admin` | Thêm mới sản phẩm vào cơ sở dữ liệu. |
-| `PUT` | `/products/{id}` | `Admin` | Cập nhật toàn bộ thông tin sản phẩm. |
-| `PATCH` | `/products/{id}` | `Admin` | Cập nhật từng trường riêng lẻ (Partial update). |
-| `DELETE` | `/products/{id}` | `Admin` | Xóa sản phẩm khỏi hệ thống. |
-
-#### Tham số Query nâng cao của `GET /Thuancyber/products`:
-- `page`: Trang hiện tại (mặc định: `1`, tối thiểu: `1`).
-- `page_size`: Kích thước trang (mặc định: `10`, tối đa: `100`).
-- `search`: Tìm kiếm gần đúng theo tên sản phẩm (`ilike %keyword%`, không phân biệt chữ hoa/thường).
-- `category_id`: Lọc sản phẩm theo ID danh mục.
-- `min_price` / `max_price`: Lọc sản phẩm theo khoảng giá bán.
-- `sort_by`: Trường sắp xếp được whitelist an toàn (`price`, `created_at`, `name`, `id`).
-- `order`: Hướng sắp xếp (`asc` hoặc `desc`).
-
-#### Cấu trúc Response phân trang Generic (`PaginatedResponse[T]`):
-```json
-{
-  "items": [
-    {
-      "id": 1,
-      "name": "Bàn phím cơ không dây",
-      "description": "Bàn phím cơ Bluetooth switch êm ái",
-      "price": 1250000.0,
-      "stock": 35,
-      "category_id": 2,
-      "is_active": true,
-      "created_at": "2026-10-24T10:00:00Z",
-      "updated_at": "2026-10-24T10:00:00Z"
-    }
-  ],
-  "total": 1,
-  "page": 1,
-  "page_size": 10,
-  "total_pages": 1
-}
-```
-
----
-
-## 5. Cơ chế Bảo Mật & Phân Quyền (RBAC)
-
-1. **Mã hóa mật khẩu:** Mật khẩu người dùng được băm an toàn thông qua hàm băm **BCrypt** (`passlib.context.CryptContext(schemes=["bcrypt"])`), không bao giờ lưu trữ mật khẩu gốc dưới dạng plain-text.
-2. **Access Token JWT:**
-   - Ký bằng thuật toán `HS256` với khóa bí mật `JWT_SECRET_KEY`.
-   - Chứa định danh người dùng trong trường chuẩn `sub`.
-   - Có thời gian hiệu lực xác định (`ACCESS_TOKEN_EXPIRE_MINUTES`).
-3. **Phân quyền hướng đối tượng (`RoleChecker`):**
-   ```python
-   # app/api/deps.py
-   class RoleChecker:
-       def __init__(self, allowed_roles: list[str]) -> None:
-           self.allowed_roles = allowed_roles
-       def __call__(self, current_user: User = Depends(get_current_user)) -> User:
-           ...
-   ```
-   - Sử dụng đơn giản qua Dependency Injection: `@router.post("/roles", dependencies=[Depends(require_admin)])`.
-   - Ngăn chặn triệt để tình trạng bypass từ phía client.
-
----
-
-## 6. Hướng dẫn cài đặt & Khởi chạy Backend
-
-### 6.1. Yêu cầu môi trường
-- Python 3.11 hoặc 3.12.
-- PostgreSQL hoặc SQLite.
-
-### 6.2. Cấu hình biến môi trường (`.env`)
-Tạo file `backend/.env`:
-```dotenv
-DATABASE_URL=sqlite:///./test.db
-# Hoặc PostgreSQL:
-# DATABASE_URL=postgresql+psycopg://app_user:password@localhost:5432/product_management
-
-JWT_SECRET_KEY=super_secret_jwt_key_for_development_change_in_production
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-```
-
-### 6.3. Cài đặt thư viện & Khởi chạy server
+### Khởi chạy môi trường Dev:
 ```powershell
-# Di chuyển vào thư mục backend
 cd backend
-
-# Kích hoạt môi trường ảo (nếu có)
 .\.venv\Scripts\Activate.ps1
-
-# Cài đặt thư viện phụ thuộc
-pip install -r requirements.txt
-
-# Khởi chạy Uvicorn server
 $env:PYTHONPATH = "src"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-- **Tài liệu Swagger UI tương tác:** Truy cập tại [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Tài liệu ReDoc:** Truy cập tại [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
----
-
-## 7. Kiểm thử tự động (Automated Testing)
-
-Backend tích hợp đầy đủ bộ test unit và integration sử dụng **pytest** và **FastAPI TestClient** với in-memory SQLite database độc lập:
-
+### Chạy bộ kiểm thử tự động (Pytest):
+Backend trang bị sẵn script PowerShell thực thi độc lập toàn bộ 63 test cases:
 ```powershell
-$env:PYTHONPATH = "src"
-python -m pytest tests/ -v
+cd backend
+.\run-tests.ps1
 ```
-Toàn bộ các ca kiểm thử xác thực, đổi mật khẩu, phân quyền admin, tạo user và tạo role đều được kiểm tra nghiêm ngặt.
+Script sẽ tự động nạp `PYTHONPATH=src` và chạy pytest với báo cáo chi tiết từng ca kiểm thử.

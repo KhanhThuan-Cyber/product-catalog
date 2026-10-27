@@ -1,192 +1,278 @@
-# Product Management System (Product-Catalog)
+# Product Catalog Management System
 
-Hệ thống ứng dụng web quản lý sản phẩm và danh mục toàn diện được xây dựng trên nền tảng **FastAPI (Python)**, **React 19 (Vite)**, **SQLAlchemy ORM**, xác thực bảo mật **JWT & BCrypt**, hệ thống phân quyền **RBAC (User / Admin / Custom Roles)** và cơ chế tự động hóa khởi tạo Database (Auto-migration & Data Bootstrapping).
+Hệ thống ứng dụng web quản lý danh mục và sản phẩm thương mại toàn diện, được xây dựng trên nền tảng **FastAPI (Python 3.12)**, **React 19 (Vite)**, **PostgreSQL 16**, **Redis 7** và đóng gói hoàn chỉnh bằng **Docker Compose**.
 
-> **Trạng thái dự án:** Đã hoàn thành toàn bộ các chức năng cốt lõi từ Backend (REST API, Authentication, RBAC, CRUD, Search, Filter, Sort, Pagination) đến Frontend (Storefront cho khách hàng, Admin Backoffice cho quản trị viên, Trang hồ sơ cá nhân và Quản lý Role).
-
----
-
-## 1. Mục lục tài liệu
-
-- 📖 **[Tài liệu Kỹ thuật Backend](file:///d:/Product-Catalog/backend/README.md):** Kiến trúc phân tầng 3 lớp, ORM Models, DTO Schemas, Repositories, Services, Security, API Endpoints và Hướng dẫn test.
-- 🎨 **[Tài liệu Kỹ thuật Frontend](file:///d:/Product-Catalog/frontend/README.md):** Kiến trúc React 19, Component Hierarchy, Dual-flow (Storefront & Admin), Profile View, Font Awesome icons, API Client.
-- 📑 **[Báo Cáo Tổng Hợp Toàn Bộ Hệ Thống](file:///d:/Product-Catalog/TONG_HOP_HE_THONG.md):** Bảng tóm tắt tổng quan ngắn gọn chi tiết về toàn bộ giải pháp từ A-Z.
-- 📅 **[Nhật Ký Tiến Độ Công Việc](file:///d:/Product-Catalog/BAO_CAO_CONG_VIEC.md):** Ghi nhận quá trình triển khai chi tiết qua từng mốc phát triển.
+Dự án áp dụng đầy đủ các chuẩn mực công nghiệp: Kiến trúc phân tầng 3 lớp (3-Tier Layered Architecture), chuẩn RESTful API, phân trang linh hoạt, chiến lược Cache-Aside hiệu năng cao, cơ chế phòng thủ sập nguồn (Graceful Degradation), xác thực bảo mật JWT kết hợp Refresh Token Rotation và Blacklist trên Redis, phân quyền vai trò RBAC và Rate Limiting chống tấn công brute-force.
 
 ---
 
-## 2. Công nghệ sử dụng
+## 📑 Mục lục tài liệu
 
-| Phân hệ | Công nghệ | Chi tiết sử dụng |
+- 📖 **[Tài liệu Kỹ thuật Backend](backend/README.md):** Kiến trúc phân tầng, SQLAlchemy ORM 2.0, DTO Schemas, Cache-Aside, Rate Limiter, Alembic và bộ 63 kiểm thử Pytest.
+- 🎨 **[Tài liệu Kỹ thuật Frontend](frontend/README.md):** Kiến trúc React 19 Feature-Based, Dual-flow (Storefront & Admin), Axios Interceptor, Live API Logger và Multi-stage Docker Nginx.
+
+---
+
+## 🛠️ Ngăn xếp Công nghệ (Tech Stack)
+
+| Phân hệ | Công nghệ | Phiên bản / Đặc tính kỹ thuật |
 |---|---|---|
-| **Backend** | Python 3.11+, FastAPI | RESTful API Framework hiệu năng cao, ASGI |
-| **ORM & Database** | SQLAlchemy 2.0, SQLite / PostgreSQL | Declarative Models, connection pool với `pool_pre_ping=True` |
-| **Data Validation** | Pydantic v2, pydantic-settings | Data Transfer Objects (DTOs), Generic Paginated Schema, Settings |
-| **Authentication & RBAC**| PyJWT, Passlib (BCrypt) | Mã hóa mật khẩu an toàn, JWT Bearer Token, `RoleChecker` OOP guard |
-| **Database Bootstrap** | Custom auto-migration (`init_db.py`) | Tự nâng cấp schema `password_hash`, idempotent seed roles & super admin |
-| **Frontend** | React 19, Vite | Single Page Application (SPA), React Hooks |
-| **UI & Icons** | Dark Theme CSS, Font Awesome 6.5.2 | Giao diện hiện đại, responsive, bộ icon nhận diện trực quan |
-| **HTTP Communication** | Native Fetch API Wrapper + Vite Proxy | Proxy chuyển tiếp `/Thuancyber` sang backend cổng 8000 |
-| **Testing** | Pytest, FastAPI TestClient | In-memory SQLite testing cho toàn bộ auth, roles, CRUD |
+| **Backend Framework** | FastAPI | Python 3.12+, ASGI hiệu năng cao, Dependency Injection |
+| **ORM & Database** | SQLAlchemy 2.0, PostgreSQL 16 | Declarative Mapped Models, Connection Pool `pool_pre_ping=True` |
+| **Data Validation** | Pydantic v2, pydantic-settings | Parsing và xác thực kiểu dữ liệu siêu tốc bằng lõi Rust |
+| **Caching & Invalidation** | Redis 7 (Alpine) | Cache-Aside pattern, MD5 composite key, SCAN pipeline deletion |
+| **Database Migration** | Alembic | Quản lý phiên bản Schema tự động, cơ chế idempotent auto-bootstrap |
+| **Security & Auth** | PyJWT, Passlib (BCrypt) | Băm mật khẩu BCrypt, Refresh Token Rotation, JTI Token Blacklist |
+| **Frontend Framework** | React 19, Vite | Single Page Application (SPA), Functional Components, React Hooks |
+| **UI & Icons** | Vanilla CSS Dark Theme, Font Awesome 6.5.2 | Giao diện hiện đại, tối ưu responsive, Live API Logger thời gian thực |
+| **HTTP Communication** | Axios 1.20 | Request/Response Interceptor, auto-inject Bearer Token |
+| **Containerization** | Docker, Docker Compose | Multi-stage build Nginx Alpine, Healthcheck tuần tự 4 services |
+| **Automated Testing** | Pytest, FastAPI TestClient | 63 ca kiểm thử tự động bao phủ auth, cache, filter, pagination |
 
 ---
 
-## 3. Kiến trúc tổng thể hệ thống
+## 🏛️ Sơ đồ Kiến trúc Hệ thống (System Architecture)
 
-```text
-               TRÌNH DUYỆT NGƯỜI DÙNG (Browser)
-                              │
-     ┌────────────────────────┴────────────────────────┐
-     ▼                                                 ▼
-[Storefront View]                              [Admin Backoffice]
-- Xem danh mục & sản phẩm                      - Route Guard (Admin only)
-- Hero Search & Category Chips                 - Quản lý Sản phẩm (CRUD, Filter)
-- Giỏ hàng & Xem chi tiết                      - Quản lý Danh mục (CRUD)
-                                               - Quản lý User & Role Management
-                                               - Live API Logger
-     │                                                 │
-     └────────────────────────┬────────────────────────┘
-                              ▼ (HTTP / JSON)
-                     [Vite Reverse Proxy]
-                      Port: 5173 (/Thuancyber)
-                              │
-                              ▼
-           ┌────────────────────────────────────────┐
-           │      FastAPI Backend (Port: 8000)      │
-           │                                        │
-           │  ├── Routers (/Thuancyber/*)           │
-           │  ├── Dependencies & RBAC Guards        │
-           │  ├── Service Layer (Business Logic)    │
-           │  ├── Repository Layer (Generic OOP)    │
-           │  └── Auto-Bootstrap (init_db.py)       │
-           └──────────────────┬─────────────────────┘
-                              │ (SQLAlchemy ORM)
-                              ▼
-           ┌────────────────────────────────────────┐
-           │          Database Storage              │
-           │  - roles (admin, user, custom roles)   │
-           │  - users (BCrypt password hash)        │
-           │  - categories (name, description)      │
-           │  - products (price, stock, category_id)│
-           └────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Client["Trình duyệt Người dùng (React 19 SPA)"]
+    Nginx["Nginx Reverse Proxy (Port 80) / Gzip / Caching"]
+    FastAPI["FastAPI Application Server (Port 8000)"]
+    
+    subgraph FastAPI_Internal ["Bên trong Backend FastAPI"]
+        Router["Router Layer (Validation & Serialization)"]
+        Service["Service Layer (Business Logic & Cache Coordination)"]
+        Repo["Repository Layer (BaseFilter & Generic Queries)"]
+    end
+    
+    Redis[("Redis 7 In-Memory Cache<br/>- Cache danh sách & chi tiết SP<br/>- JTI Token Blacklist<br/>- Fixed-Window Rate Limiting")]
+    Postgres[("PostgreSQL 16 Database<br/>- Bảng Categories & Products<br/>- Bảng Users & Roles<br/>- Volume lưu trữ bền vững")]
+
+    Client -->|HTTP / JSON / Port 80| Nginx
+    Nginx -->|Proxy pass API /Thuancyber| FastAPI
+    FastAPI --> Router
+    Router --> Service
+    Service <-->|Cache Read/Write/Invalidate| Redis
+    Service --> Repo
+    Repo <-->|SQLAlchemy ORM 2.0| Postgres
 ```
 
 ---
 
-## 4. Cấu trúc thư mục dự án
+## 🗄️ Sơ đồ Thực thể Quan hệ (ERD - Entity Relationship Diagram)
 
-```text
-Product-Catalog/
-├── README.md                           # Tài liệu tổng quan dự án (File này)
-├── TONG_HOP_HE_THONG.md                # Báo cáo tổng hợp ngắn gọn chi tiết toàn hệ thống
-├── BAO_CAO_CONG_VIEC.md                # Nhật ký tiến độ công việc hàng ngày
-├── backend/                            # Phân hệ Backend (FastAPI)
-│   ├── README.md                       # Tài liệu hướng dẫn kỹ thuật Backend
-│   ├── requirements.txt                # Thư viện phụ thuộc Python
-│   ├── tests/                          # Bộ kiểm thử tích hợp (pytest)
-│   │   ├── test_auth_endpoints.py      # Test xác thực, đổi mật khẩu, phân quyền, role
-│   │   └── test_products_categories.py # Test CRUD sản phẩm và danh mục
-│   └── src/
-│       └── app/
-│           ├── main.py                 # FastAPI app, CORS, mount routers
-│           ├── api/deps.py             # get_db, JWT auth & RoleChecker
-│           ├── core/                   # Cấu hình, database, security, init_db
-│           ├── models/                 # SQLAlchemy models (User, Role, Category, Product)
-│           ├── schemas/                # Pydantic schemas (Auth, Category, Product, Pagination)
-│           ├── repositories/           # Repositories (Base Generic, Role, User, Category, Product)
-│           ├── services/               # Services (CategoryService, ProductService)
-│           └── routers/                # Routers (auth, users, categories, products)
-└── frontend/                           # Phân hệ Frontend (React 19 Feature-Based Architecture)
-    ├── README.md                       # Tài liệu hướng dẫn kỹ thuật Frontend
-    ├── package.json                    # Cấu hình dự án Frontend
-    ├── vite.config.js                  # Vite dev server & proxy cấu hình /Thuancyber
-    ├── index.html                      # HTML root, CDN Font Awesome 6.5.2
-    └── src/
-        ├── app/                        # App.jsx, router.jsx, providers.jsx
-        ├── api/                        # client.js, endpoints.js, errorHandler.js
-        ├── layouts/                    # MainLayout.jsx, AdminLayout.jsx, AuthLayout.jsx
-        ├── features/                   # auth, products, categories, users, profile
-        ├── components/                 # common/ (Button, Input, Modal...), navigation/ (Navbar, Sidebar...)
-        ├── guards/                     # AuthGuard.jsx, RoleGuard.jsx
-        ├── hooks/                      # useDebounce.js
-        ├── utils/                      # formatCurrency.js, validators.js
-        ├── styles/                     # variables.css, global.css, layout.css, components.css
-        └── main.jsx                    # Entry point React 19 root
+```mermaid
+erDiagram
+    ROLES ||--o{ USERS : "has many"
+    CATEGORIES ||--o{ PRODUCTS : "contains (RESTRICT)"
+
+    ROLES {
+        int id PK
+        string name UK "admin | user | custom"
+        string description
+        datetime created_at
+    }
+
+    USERS {
+        int id PK
+        string email UK
+        string password_hash
+        string full_name
+        int role_id FK
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    CATEGORIES {
+        bigint id PK
+        string name UK
+        string description
+        datetime created_at
+    }
+
+    PRODUCTS {
+        int id PK
+        string name
+        string description
+        numeric price "12, 2 (price > 0)"
+        int stock "stock >= 0"
+        int category_id FK
+        string image_url
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
 ```
 
 ---
 
-## 5. Danh mục RESTful API (Prefix: `/Thuancyber`)
+## 🚀 Hướng dẫn Khởi chạy Nhanh
 
-Tất cả các API được bảo vệ và định tuyến qua tiền tố `/Thuancyber`:
+### Cách 1: Khởi chạy bằng Docker Compose (Khuyên dùng - 1 lệnh duy nhất)
 
-### 5.1. Authentication & Cá nhân (`/Thuancyber/auth`)
-- `POST /Thuancyber/auth/register`: Đăng ký tài khoản mới (vai trò mặc định `user`).
-- `POST /Thuancyber/auth/login`: Đăng nhập, nhận JWT Access Token.
-- `GET /Thuancyber/auth/me`: Lấy thông tin tài khoản đang đăng nhập.
-- `PATCH /Thuancyber/auth/me`: Cập nhật họ tên hiển thị.
-- `POST /Thuancyber/auth/change-password`: Đổi mật khẩu cá nhân.
+Toàn bộ hệ thống gồm 4 container (`postgres`, `redis`, `backend`, `frontend`) sẽ tự động cấu hình mạng, chờ database sẵn sàng qua cơ chế `healthcheck` và nạp sẵn 120 sản phẩm mẫu:
 
-### 5.2. Quản lý Người dùng & Phân quyền Vai trò (`/Thuancyber/users`)
-- `GET /Thuancyber/users`: Lấy danh sách toàn bộ người dùng (Yêu cầu `Admin`).
-- `POST /Thuancyber/users`: Admin tạo người dùng mới và phân vai trò trực tiếp (Yêu cầu `Admin`).
-- `PATCH /Thuancyber/users/{id}/status`: Khóa hoặc mở khóa tài khoản (Yêu cầu `Admin`).
-- `PATCH /Thuancyber/users/{id}/role`: Thay đổi vai trò người dùng (Yêu cầu `Admin`).
-- `GET /Thuancyber/users/roles`: Lấy danh sách tất cả các vai trò trong hệ thống.
-- `POST /Thuancyber/users/roles`: **Thêm vai trò mới** động (ví dụ `manager`, `editor`, `staff`...) (Yêu cầu `Admin`).
+```bash
+# Clone dự án và di chuyển vào thư mục gốc
+git clone https://github.com/KhanhThuan-Cyber/product-catalog.git
+cd product-catalog
 
-### 5.3. Quản lý Danh mục Sản phẩm (`/Thuancyber/categories`)
-- `GET /Thuancyber/categories`: Lấy danh sách danh mục (Công khai).
-- `GET /Thuancyber/categories/{id}`: Xem chi tiết danh mục (Công khai).
-- `POST /Thuancyber/categories`: Tạo mới danh mục (Yêu cầu `Admin`).
-- `PUT /Thuancyber/categories/{id}`: Cập nhật danh mục (Yêu cầu `Admin`).
-- `DELETE /Thuancyber/categories/{id}`: Xóa danh mục (Yêu cầu `Admin`, tự động chặn nếu đang có sản phẩm).
+# Khởi chạy toàn bộ hệ thống
+docker compose up --build
+```
 
-### 5.4. Quản lý Sản phẩm (`/Thuancyber/products`)
-- `GET /Thuancyber/products`: Lấy danh sách sản phẩm (Công khai, hỗ trợ lọc đa điều kiện):
-  - `page`, `page_size`: Phân trang dữ liệu.
-  - `search`: Tìm kiếm gần đúng theo tên (`ilike`).
-  - `category_id`: Lọc theo danh mục.
-  - `min_price`, `max_price`: Lọc theo khoảng giá.
-  - `sort_by`, `order`: Sắp xếp an toàn theo whitelist (`price`, `created_at`, `name`, `id`).
-- `GET /Thuancyber/products/{id}`: Xem chi tiết sản phẩm theo ID (Công khai).
-- `POST /Thuancyber/products`: Thêm mới sản phẩm (Yêu cầu `Admin`).
-- `PUT /Thuancyber/products/{id}`: Cập nhật toàn bộ sản phẩm (Yêu cầu `Admin`).
-- `PATCH /Thuancyber/products/{id}`: Cập nhật từng trường sản phẩm (Yêu cầu `Admin`).
-- `DELETE /Thuancyber/products/{id}`: Xóa sản phẩm (Yêu cầu `Admin`).
+- **Giao diện Web (Frontend):** [http://localhost](http://localhost) hoặc [http://localhost:5173](http://localhost:5173)
+- **Tài liệu API tương tác (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Cơ sở dữ liệu PostgreSQL:** Cổng `5432` (User: `postgres`, Password: `postgres`, DB: `Product-Catalog`)
+- **Bộ nhớ đệm Redis:** Cổng `6379`
+
+Để tắt hệ thống:
+```bash
+docker compose down
+```
 
 ---
 
-## 6. Hướng dẫn Khởi chạy Hệ thống
+### Cách 2: Khởi chạy thủ công môi trường Phát triển (Local Dev)
 
-### 6.1. Khởi chạy Backend (Cổng 8000)
-Mở một cửa sổ Terminal tại thư mục `backend`:
+#### 1. Khởi chạy Backend:
 ```powershell
 cd backend
-.\.venv\Scripts\Activate.ps1   # (Nếu có virtual environment)
+
+# Kích hoạt môi trường ảo Python
+.\.venv\Scripts\Activate.ps1
+
+# Cài đặt thư viện
 pip install -r requirements.txt
+
+# Thiết lập PYTHONPATH và chạy server
 $env:PYTHONPATH = "src"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-* Tài liệu Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 6.2. Khởi chạy Frontend (Cổng 5173)
-Mở một cửa sổ Terminal thứ hai tại thư mục `frontend`:
+#### 2. Khởi chạy Frontend:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-* Ứng dụng Web: [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 7. Tài khoản kiểm thử có sẵn (Mặc định tự sinh)
+## 🔑 Tài khoản Mặc định & Dữ liệu Mẫu (Seed Data)
 
-Hệ thống tự động kích hoạt cơ chế Bootstrap nạp sẵn tài khoản Super Admin khi khởi động máy chủ:
-- **Tài khoản Quản trị viên (Admin):**
-  - **Email:** `admin@system.local`
-  - **Mật khẩu:** `Admin@123456`
-  - **Vai trò:** `admin` (Có toàn quyền truy cập Trang Admin, Quản lý sản phẩm, danh mục, người dùng và thêm vai trò mới).
-- **Tài khoản Người dùng thông thường (Khách hàng):**
-  - Bấm nút **"Đăng ký"** trên giao diện để tự tạo tài khoản mới ngay lập tức (mặc định vai trò `user`).
+Khi hệ thống khởi động lần đầu, cơ chế `init_database` và `seed_products` sẽ tự động khởi tạo:
+
+| Tài khoản | Email đăng nhập | Mật khẩu | Quyền hạn (Role) | Mô tả |
+|---|---|---|---|---|
+| **Super Admin** | `admin@system.local` | `Admin@123456` | `admin` | Toàn quyền thêm, sửa, xóa sản phẩm, danh mục, đổi role và xem live logs. |
+| **Khách hàng mẫu** | Đăng ký trực tiếp tại nút "Đăng ký" trên web | Tự đặt | `user` | Xem danh sách, tìm kiếm, lọc giá, xem chi tiết và thêm vào giỏ hàng. |
+
+* **Dữ liệu mẫu:** Hệ thống tự động nạp sẵn **120 sản phẩm** thuộc **5 danh mục chính** (Điện thoại, Laptop, Phụ kiện, Thiết bị mạng, Thiết bị văn phòng) phục vụ kiểm thử phân trang và bộ lọc ngay khi vừa khởi động.
+
+---
+
+## 📡 Danh mục RESTful API Endpoints (Prefix: `/Thuancyber`)
+
+### 1. Quản lý Sản phẩm (`/Thuancyber/products`)
+
+| Method | Endpoint | Quyền | Mô tả |
+|---|---|---|---|
+| `GET` | `/Thuancyber/products` | Công khai | Lấy danh sách sản phẩm phân trang, tìm kiếm, lọc giá, lọc danh mục và sắp xếp (có Redis Cache 60s). |
+| `GET` | `/Thuancyber/products/{id}` | Công khai | Xem chi tiết sản phẩm theo ID (Redis Cache 60s). |
+| `POST` | `/Thuancyber/products` | `Admin` | Thêm mới sản phẩm (Tự động xóa cache danh sách). |
+| `PUT` | `/Thuancyber/products/{id}` | `Admin` | Cập nhật toàn bộ thông tin sản phẩm (Invalidate cache liên đới). |
+| `PATCH` | `/Thuancyber/products/{id}` | `Admin` | Cập nhật nhanh một phần (ví dụ: chỉ sửa giá hoặc tồn kho). |
+| `DELETE` | `/Thuancyber/products/{id}` | `Admin` | Xóa sản phẩm khỏi hệ thống (Xóa cache chi tiết và danh sách). |
+
+**Các tham số Query của `GET /Thuancyber/products`:**
+- `page`: Số trang (mặc định: `1`, tối thiểu: `1`).
+- `page_size`: Kích thước trang (mặc định: `10`, tối đa: `100`).
+- `search`: Từ khóa tìm kiếm theo tên sản phẩm (`ILIKE %search%`).
+- `category_id`: Lọc theo mã danh mục.
+- `min_price` / `max_price`: Khoảng giá (validate `min_price <= max_price`).
+- `sort_by`: Cột sắp xếp an toàn (`id`, `price`, `created_at`, `name`).
+- `order`: Hướng sắp xếp (`asc` hoặc `desc`).
+
+---
+
+### 2. Quản lý Danh mục (`/Thuancyber/categories`)
+
+| Method | Endpoint | Quyền | Mô tả |
+|---|---|---|---|
+| `GET` | `/Thuancyber/categories` | Công khai | Lấy toàn bộ danh mục sản phẩm. |
+| `GET` | `/Thuancyber/categories/{id}` | Công khai | Xem thông tin chi tiết một danh mục. |
+| `POST` | `/Thuancyber/categories` | `Admin` | Tạo danh mục mới (Kiểm tra không trùng tên). |
+| `PUT` | `/Thuancyber/categories/{id}` | `Admin` | Đổi tên hoặc mô tả danh mục. |
+| `DELETE` | `/Thuancyber/categories/{id}` | `Admin` | Xóa danh mục (Chặn xóa nếu danh mục đang chứa sản phẩm). |
+
+---
+
+### 3. Xác thực & Quản lý Phân quyền
+
+- `POST /Thuancyber/auth/register`: Đăng ký tài khoản người dùng mới (có giới hạn Rate Limit).
+- `POST /Thuancyber/auth/login`: Đăng nhập, nhận Access Token (30 phút) và Refresh Token (7 ngày).
+- `POST /Thuancyber/auth/logout`: Đăng xuất an toàn, thu hồi token đưa vào Redis JTI Blacklist.
+- `GET /Thuancyber/auth/me`: Lấy thông tin tài khoản đang đăng nhập.
+- `PATCH /Thuancyber/auth/me`: Cập nhật họ tên hiển thị cá nhân.
+- `POST /Thuancyber/auth/change-password`: Đổi mật khẩu cá nhân.
+- `GET /Thuancyber/users`: Danh sách người dùng (Chỉ dành cho Admin).
+- `PATCH /Thuancyber/users/{id}/role`: Phân lại quyền/vai trò người dùng.
+
+---
+
+## ⚡ Các Cơ Chế Kỹ Thuật Nổi Bật
+
+1. **Chiến lược Cache-Aside & Invalidation:**
+   - Đọc dữ liệu: Kiểm tra Redis trước. Nếu có (Hit) trả về ngay $\le 2\text{ms}$; nếu không (Miss) query PostgreSQL và lưu Redis kèm TTL.
+   - Khi có thay đổi (Create / Update / Delete): Thực hiện xóa key chi tiết `product:detail:{id}` và xóa an toàn hàng loạt key danh sách `product:list:*` thông qua lệnh `SCAN` kết hợp `pipeline.delete` (chống block server so với lệnh `KEYS *`).
+2. **Cơ chế phòng ngừa lỗi Cache (Graceful Degradation):**
+   - Lớp `NoOpRedisClient` tự động kích hoạt khi Redis không khả dụng. Ứng dụng tự động chuyển hướng mọi truy vấn xuống PostgreSQL, đảm bảo website không bị crash gián đoạn dịch vụ.
+3. **Bảo mật Đa lớp & Giám sát thời gian thực:**
+   - Access Token có `jti` duy nhất hỗ trợ Blacklist khi người dùng bấm Đăng xuất.
+   - Cơ chế xoay vòng Refresh Token (RTR) phát hiện token bị đánh cắp.
+   - Fixed-window Rate Limiter giới hạn số lần đăng nhập theo IP để phòng chống tấn công brute-force.
+   - Giao diện Admin tích hợp công cụ **Live API Logger** hiển thị trực tiếp các request/response HTTP.
+
+---
+
+## 📁 Cấu trúc Thư mục Chuẩn của Dự án
+
+```text
+Product-Catalog/
+├── README.md                           # Tài liệu tổng quan toàn bộ hệ thống (File này)
+├── docker-compose.yml                  # Điều phối 4 container (Postgres, Redis, Backend, Frontend)
+├── .env.example                        # Mẫu biến môi trường chung
+├── .dockerignore                       # Loại trừ các file rác khi build docker
+├── .gitignore                          # Loại trừ file tạm khỏi Git
+├── backend/                            # Phân hệ Backend (FastAPI + Python 3.12)
+│   ├── README.md                       # Hướng dẫn kỹ thuật chuyên sâu Backend
+│   ├── Dockerfile                      # Đóng gói image Backend (python:3.12-slim)
+│   ├── requirements.txt                # Thư viện phụ thuộc
+│   ├── alembic/                        # Migration scripts quản lý cơ sở dữ liệu
+│   ├── tests/                          # 63 unit/integration tests (pytest)
+│   ├── run-tests.ps1                   # Script chạy test tự động
+│   ├── seed.py                         # Script nạp 120 sản phẩm mẫu độc lập
+│   └── src/app/                        # Mã nguồn ứng dụng (Clean 3-Tier Layered Architecture)
+│       ├── main.py                     # Entry point FastAPI, CORS, routers
+│       ├── core/                       # config, database, redis, rate_limiter, security, seed
+│       ├── models/                     # SQLAlchemy Models (Product, Category, User, Role)
+│       ├── schemas/                    # Pydantic Schemas (DTOs, Filter, Pagination)
+│       ├── repositories/               # Repository queries (BaseRepository, BaseFilter)
+│       ├── services/                   # Business Logic & Cache coordination
+│       └── routers/                    # Endpoints (/Thuancyber/products, categories, auth, users)
+└── frontend/                           # Phân hệ Frontend (React 19 + Vite)
+    ├── README.md                       # Hướng dẫn kỹ thuật chuyên sâu Frontend
+    ├── Dockerfile                      # Multi-stage build (Node 20 -> Nginx Alpine)
+    ├── nginx.conf                      # Cấu hình Nginx reverse proxy, gzip, SPA fallback
+    ├── package.json                    # Khai báo dependencies
+    ├── vite.config.js                  # Cấu hình Vite & reverse proxy
+    └── src/                            # Mã nguồn React 19 Feature-Based
+        ├── api/                        # client.js (Axios + Logger pub/sub), endpoints.js
+        ├── features/                   # auth, products, categories, users, profile
+        ├── layouts/                    # MainLayout, AdminLayout, AuthLayout
+        ├── guards/                     # AuthGuard, RoleGuard
+        ├── hooks/                      # useDebounce, useProducts
+        └── components/                 # common/ (Button, Input, Modal, ConfirmDialog)
+```
