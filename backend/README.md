@@ -59,7 +59,6 @@ backend/
 ├── alembic/                        # Các bản ghi migration cơ sở dữ liệu
 │   ├── env.py                      # Cấu hình kết nối DB và Base.metadata
 │   └── versions/                   # Lịch sử các file migration (.py)
-├── seed.py                         # Script nạp 120 sản phẩm mẫu độc lập
 ├── run-tests.ps1                   # Script thực thi toàn bộ 63 kiểm thử Pytest
 ├── tests/                          # Bộ kiểm thử tự động
 │   ├── conftest.py                 # Fixture test, mock redis & in-memory sqlite
