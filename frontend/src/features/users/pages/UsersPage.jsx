@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import Button from '../../../components/common/Button'
 import Loading from '../../../components/common/Loading'
 import RoleSelector from '../components/RoleSelector'
@@ -88,7 +88,7 @@ export default function UsersPage({ currentUser, showToast }) {
     <div className="card">
       <div className="card-title">
         <span>
-          <i className="fa-solid fa-users-gear" style={{ marginRight: 8, color: '#c084fc' }}></i>
+          <i className="fa-solid fa-users-gear" style={{ marginRight: 8, color: 'var(--accent-purple)' }}></i>
           Quản Lý Người Dùng & Phân Quyền ({users.length} tài khoản)
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

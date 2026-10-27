@@ -1,4 +1,4 @@
-import Button from '../../../components/common/Button'
+﻿import Button from '../../../components/common/Button'
 
 export default function CategoryList({
   categories = [],
@@ -30,7 +30,7 @@ export default function CategoryList({
             <tr key={c.id}>
               <td><strong>#{c.id}</strong></td>
               <td>
-                <span style={{ fontWeight: 600, color: '#38bdf8' }}>
+                <span style={{ fontWeight: 600, color: 'var(--accent-sky)' }}>
                   <i className="fa-solid fa-folder" style={{ marginRight: 6 }}></i>
                   {c.name}
                 </span>

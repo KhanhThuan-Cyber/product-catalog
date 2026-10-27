@@ -62,7 +62,7 @@ export default function ApiLogger() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span className={`log-status ${statusClass}`}>{log.status}</span>
-                    <strong style={{ color: '#60a5fa' }}>{log.method}</strong>
+                    <strong style={{ color: 'var(--accent-blue)' }}>{log.method}</strong>
                     <span style={{ color: 'var(--text-main)' }}>{log.url}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-muted)' }}>
@@ -87,14 +87,14 @@ export default function ApiLogger() {
 
                   <div style={{ marginTop: 12 }}>
                     <strong>Request Payload:</strong>
-                    <pre style={{ background: '#020617', padding: 10, borderRadius: 6, overflowX: 'auto', marginTop: 4 }}>
+                    <pre className="logger-pre">
                       {selectedLog.requestBody ? JSON.stringify(selectedLog.requestBody, null, 2) : 'null (None)'}
                     </pre>
                   </div>
 
                   <div style={{ marginTop: 12 }}>
                     <strong>Response Data:</strong>
-                    <pre style={{ background: '#020617', padding: 10, borderRadius: 6, overflowX: 'auto', marginTop: 4, maxHeight: 200 }}>
+                    <pre className="logger-pre">
                       {selectedLog.responseBody ? JSON.stringify(selectedLog.responseBody, null, 2) : 'null (No Content)'}
                     </pre>
                   </div>

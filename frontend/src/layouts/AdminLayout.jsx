@@ -20,8 +20,8 @@ export default function AdminLayout({
         {/* Admin Header */}
         <div className="admin-header-bar">
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>
-              <i className="fa-solid fa-gauge-high" style={{ color: '#c084fc', marginRight: 10 }}></i>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-heading)' }}>
+              <i className="fa-solid fa-gauge-high" style={{ color: 'var(--accent-purple)', marginRight: 10 }}></i>
               Trung Tâm Quản Trị Hệ Thống (Admin Backoffice)
             </h2>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
