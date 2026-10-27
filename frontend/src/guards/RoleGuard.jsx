@@ -16,8 +16,8 @@ export default function RoleGuard({
   if (!hasPermission) {
     return (
       <div className="card" style={{ maxWidth: 600, margin: '60px auto', textAlign: 'center', padding: 40 }}>
-        <i className="fa-solid fa-shield-halved fa-4x" style={{ color: '#ef4444', marginBottom: 16 }}></i>
-        <h2 style={{ color: '#f87171', marginBottom: 12 }}>403 — Quyền Truy Cập Bị Từ Chối</h2>
+        <i className="fa-solid fa-shield-halved fa-4x" style={{ color: 'var(--danger)', marginBottom: 16 }}></i>
+        <h2 style={{ color: 'var(--accent-red)', marginBottom: 12 }}>403 — Quyền Truy Cập Bị Từ Chối</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
           Khu vực này được bảo mật và chỉ dành cho tài khoản có vai trò{' '}
           <strong>{allowedRoles.join(', ')}</strong>.

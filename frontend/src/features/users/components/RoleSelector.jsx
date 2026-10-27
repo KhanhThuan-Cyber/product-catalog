@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import Button from '../../../components/common/Button'
 import Input from '../../../components/common/Input'
 import Modal from '../../../components/common/Modal'
@@ -70,7 +70,7 @@ export default function RoleSelector({
         <div className="roles-summary-bar">
           <div className="roles-summary-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
-              <i className="fa-solid fa-shield-halved" style={{ color: '#8b5cf6' }}></i>
+              <i className="fa-solid fa-shield-halved" style={{ color: 'var(--accent-violet)' }}></i>
               <strong>Vai Trò Hệ Thống ({roles.length}):</strong>
             </div>
             {showCreateButton && (

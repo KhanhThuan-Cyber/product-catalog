@@ -45,7 +45,7 @@ export default function ChangePasswordForm({ showToast }) {
     <div className="card" style={{ height: '100%' }}>
       <div className="card-title" style={{ fontSize: '1.05rem', marginBottom: 16 }}>
         <span>
-          <i className="fa-solid fa-key" style={{ color: '#f59e0b', marginRight: 8 }}></i>
+          <i className="fa-solid fa-key" style={{ color: 'var(--accent-amber)', marginRight: 8 }}></i>
           Đổi Mật Khẩu
         </span>
       </div>

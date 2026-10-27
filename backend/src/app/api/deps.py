@@ -40,8 +40,31 @@ def get_current_user(
         if user_id_str is None:
             raise credentials_exception
         user_id = int(user_id_str)
+        jti = payload.get("jti")
     except (jwt.PyJWTError, ValueError):
         raise credentials_exception
+
+    # Kiểm tra mã định danh jti và blacklist trong Redis
+    if not jti:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token không có mã định danh hoặc đã hết hiệu lực, vui lòng đăng nhập lại",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        from app.core import redis as redis_module
+        if redis_module.redis_client.exists(f"blacklist:{jti}"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token đã bị thu hồi hoặc đã đăng xuất",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        # Fallback graceful khi Redis không khả dụng
+        pass
 
     user = user_repo.get_by_id(db, user_id)
     if user is None:

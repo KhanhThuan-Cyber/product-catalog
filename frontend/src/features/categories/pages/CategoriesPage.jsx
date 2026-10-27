@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import Button from '../../../components/common/Button'
 import ConfirmDialog from '../../../components/common/ConfirmDialog'
 import Loading from '../../../components/common/Loading'
@@ -82,7 +82,7 @@ export default function CategoriesPage({ showToast, onCategoryChanged }) {
     <div className="card">
       <div className="card-title">
         <span>
-          <i className="fa-solid fa-folder-tree" style={{ marginRight: 8, color: '#38bdf8' }}></i>
+          <i className="fa-solid fa-folder-tree" style={{ marginRight: 8, color: 'var(--accent-sky)' }}></i>
           Quản Lý Danh Mục Sản Phẩm ({categories.length})
         </span>
         <Button variant="primary" size="sm" icon="fa-solid fa-plus" onClick={handleCreateOpen}>
