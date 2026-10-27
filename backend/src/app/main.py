@@ -1,8 +1,11 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import SessionLocal, engine
 from app.core.init_db import init_database
+from app.core.seed import seed_products
 from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
 from app.routers.products import router as products_router
@@ -14,6 +17,8 @@ from app.models.category import Category
 from app.models.product import Product
 from app.models.role import Role
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Product Management API",
@@ -32,8 +37,18 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
-    """Tự động nâng cấp schema, tạo bảng và nạp vai trò/admin mặc định khi kết nối DB."""
+    """Tự động nâng cấp schema, tạo bảng, nạp vai trò/admin mặc định và seed sản phẩm mẫu."""
     init_database(engine, SessionLocal)
+
+    # Seed sản phẩm/danh mục mẫu (idempotent).
+    # Lỗi seed không chặn khởi động app — chỉ cảnh báo.
+    db = SessionLocal()
+    try:
+        seed_products(db)
+    except Exception as e:
+        logger.warning("Seed sản phẩm mẫu thất bại: %s", e)
+    finally:
+        db.close()
 
 
 # Đăng ký các router với prefix hệ thống
