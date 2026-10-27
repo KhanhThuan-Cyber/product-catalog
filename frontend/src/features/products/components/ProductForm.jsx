@@ -139,7 +139,7 @@ export default function ProductForm({
         {/* Image URL input + preview */}
         <div className="form-group" style={{ marginBottom: 20 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <i className="fa-solid fa-image" style={{ color: '#60a5fa' }}></i>
+            <i className="fa-solid fa-image" style={{ color: 'var(--accent-blue)' }}></i>
             URL Hình Ảnh
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>(tuỳ chọn)</span>
           </label>

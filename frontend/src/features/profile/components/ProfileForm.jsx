@@ -34,7 +34,7 @@ export default function ProfileForm({ currentUser, onProfileUpdated, showToast }
     <div className="card" style={{ height: '100%' }}>
       <div className="card-title" style={{ fontSize: '1.05rem', marginBottom: 16 }}>
         <span>
-          <i className="fa-solid fa-user-pen" style={{ color: '#38bdf8', marginRight: 8 }}></i>
+          <i className="fa-solid fa-user-pen" style={{ color: 'var(--accent-sky)', marginRight: 8 }}></i>
           Thông Tin Cá Nhân
         </span>
       </div>

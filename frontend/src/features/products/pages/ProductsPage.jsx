@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import Button from '../../../components/common/Button'
 import ConfirmDialog from '../../../components/common/ConfirmDialog'
 import Input from '../../../components/common/Input'
@@ -131,7 +131,7 @@ export default function ProductsPage({ categories = [], showToast }) {
     <div className="card">
       <div className="card-title">
         <span>
-          <i className="fa-solid fa-boxes-stacked" style={{ marginRight: 8, color: '#38bdf8' }}></i>
+          <i className="fa-solid fa-boxes-stacked" style={{ marginRight: 8, color: 'var(--accent-sky)' }}></i>
           Quản Lý Sản Phẩm Trong Kho ({total} sản phẩm)
         </span>
         <Button variant="primary" size="sm" icon="fa-solid fa-plus" onClick={handleCreateOpen}>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react'
+import { ThemeProvider } from '../context/ThemeContext'
 
 // --- Toast Context ---
 const ToastContext = createContext(null)
@@ -102,8 +103,10 @@ export function useCart() {
 // --- Unified App Providers ---
 export default function AppProviders({ children }) {
   return (
-    <ToastProvider>
-      <CartProvider>{children}</CartProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <CartProvider>{children}</CartProvider>
+      </ToastProvider>
+    </ThemeProvider>
   )
 }

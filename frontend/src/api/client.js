@@ -25,8 +25,10 @@ function broadcastLog(log) {
 // ---------------------------------------------------------------------------
 // Axios instance
 // ---------------------------------------------------------------------------
+const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
 const axiosInstance = axios.create({
-  // Không set baseURL vì path đã bao gồm API_PREFIX (/Thuancyber/...)
+  baseURL: apiBaseUrl || undefined,
   headers: {
     'Content-Type': 'application/json',
   },

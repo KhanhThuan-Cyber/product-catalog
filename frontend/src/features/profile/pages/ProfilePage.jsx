@@ -18,11 +18,11 @@ export default function ProfilePage({
       <div className="card" style={{ padding: '28px 32px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div style={{ color: isAdmin ? '#c084fc' : '#60a5fa' }}>
+            <div style={{ color: isAdmin ? 'var(--accent-purple)' : 'var(--accent-blue)' }}>
               <i className="fa-solid fa-circle-user" style={{ fontSize: '4.5rem' }}></i>
             </div>
             <div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-heading)', marginBottom: 4 }}>
                 {currentUser?.full_name || 'Người dùng chưa đặt tên'}
               </h2>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 8 }}>

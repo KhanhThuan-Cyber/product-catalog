@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import AuthModal from '../features/auth/components/AuthModal'
 import { useAuth } from '../features/auth/hooks/useAuth'
 import CategoriesPage from '../features/categories/pages/CategoriesPage'
@@ -90,9 +90,9 @@ export default function App() {
       {currentPath === 'store' && (
         <div className="storefront">
           {/* Hero Banner */}
-          <div className="hero-banner" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '36px 28px', marginBottom: 24, textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', marginBottom: 8 }}>
-              <i className="fa-solid fa-store" style={{ marginRight: 10, color: '#60a5fa' }}></i>
+          <div className="hero-banner">
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-heading)', marginBottom: 8 }}>
+              <i className="fa-solid fa-store" style={{ marginRight: 10, color: 'var(--accent-blue)' }}></i>
               Chào mừng đến với Cửa Hàng Trực Tuyến
             </h2>
             <p style={{ color: 'var(--text-muted)', maxWidth: 600, margin: '0 auto 20px auto', fontSize: '0.95rem' }}>
@@ -101,16 +101,7 @@ export default function App() {
 
             <form
               onSubmit={handleSearchSubmit}
-              style={{
-                display: 'flex',
-                maxWidth: 650,
-                margin: '0 auto',
-                backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border)',
-                borderRadius: '30px',
-                padding: '4px 6px',
-                alignItems: 'center',
-              }}
+              className="hero-search-bar"
             >
               <i className="fa-solid fa-magnifying-glass" style={{ paddingLeft: 16, color: 'var(--text-muted)' }}></i>
               <input
@@ -118,7 +109,6 @@ export default function App() {
                 placeholder="Tìm kiếm sản phẩm theo tên..."
                 value={storeSearch}
                 onChange={(e) => setStoreSearch(e.target.value)}
-                style={{ flex: 1, background: 'transparent', border: 'none', padding: '10px 14px', color: '#fff' }}
               />
               <button type="submit" className="btn btn-primary" style={{ borderRadius: '24px', padding: '8px 20px' }}>
                 Tìm Kiếm
@@ -134,7 +124,7 @@ export default function App() {
               style={{
                 backgroundColor: storeCatId === '' ? 'var(--primary)' : 'var(--bg-card)',
                 border: '1px solid var(--border)',
-                color: storeCatId === '' ? '#fff' : 'var(--text-muted)',
+                color: storeCatId === '' ? 'var(--text-on-accent)' : 'var(--text-muted)',
                 padding: '8px 16px',
                 borderRadius: '20px',
                 cursor: 'pointer',
@@ -151,7 +141,7 @@ export default function App() {
                 style={{
                   backgroundColor: storeCatId === cat.id ? 'var(--primary)' : 'var(--bg-card)',
                   border: '1px solid var(--border)',
-                  color: storeCatId === cat.id ? '#fff' : 'var(--text-muted)',
+                  color: storeCatId === cat.id ? 'var(--text-on-accent)' : 'var(--text-muted)',
                   padding: '8px 16px',
                   borderRadius: '20px',
                   cursor: 'pointer',
@@ -264,31 +254,31 @@ export default function App() {
           <div className="modal" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>
-                <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: '#38bdf8' }}></i>
+                <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: 'var(--accent-sky)' }}></i>
                 Chi Tiết Sản Phẩm #{detailProduct.id}
               </h3>
               <button className="modal-close" onClick={() => setDetailProduct(null)}>✕</button>
             </div>
 
             <div style={{ padding: '10px 0' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-heading)', marginBottom: 8 }}>
                 {detailProduct.name}
               </h2>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#34d399', marginBottom: 16 }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent-emerald)', marginBottom: 16 }}>
                 {formatCurrency(detailProduct.price)}
               </div>
 
-              <div className="card" style={{ padding: 16, backgroundColor: 'rgba(0,0,0,0.2)', marginBottom: 16 }}>
+              <div className="card" style={{ padding: 16, backgroundColor: 'var(--bg-inset)', marginBottom: 16 }}>
                 <p style={{ color: 'var(--text-main)', lineHeight: 1.6 }}>
                   {detailProduct.description || 'Chưa có thông tin mô tả chi tiết cho sản phẩm này.'}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                <div>Danh mục: <strong style={{ color: '#fff' }}>{categories.find((c) => c.id === detailProduct.category_id)?.name || 'Chung'}</strong></div>
-                <div>Tồn kho: <strong style={{ color: '#fff' }}>{detailProduct.stock} cái</strong></div>
-                <div>Trạng thái: <strong style={{ color: '#34d399' }}>Đang kinh doanh</strong></div>
-                <div>Cập nhật: <strong style={{ color: '#fff' }}>{new Date(detailProduct.updated_at).toLocaleDateString('vi-VN')}</strong></div>
+                <div>Danh mục: <strong style={{ color: 'var(--text-heading)' }}>{categories.find((c) => c.id === detailProduct.category_id)?.name || 'Chung'}</strong></div>
+                <div>Tồn kho: <strong style={{ color: 'var(--text-heading)' }}>{detailProduct.stock} cái</strong></div>
+                <div>Trạng thái: <strong style={{ color: 'var(--accent-emerald)' }}>Đang kinh doanh</strong></div>
+                <div>Cập nhật: <strong style={{ color: 'var(--text-heading)' }}>{new Date(detailProduct.updated_at).toLocaleDateString('vi-VN')}</strong></div>
               </div>
             </div>
 
@@ -316,7 +306,7 @@ export default function App() {
           <div className="modal" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>
-                <i className="fa-solid fa-cart-shopping" style={{ marginRight: 8, color: '#38bdf8' }}></i>
+                <i className="fa-solid fa-cart-shopping" style={{ marginRight: 8, color: 'var(--accent-sky)' }}></i>
                 Giỏ Hàng Của Bạn ({totalItems} sản phẩm)
               </h3>
               <button className="modal-close" onClick={() => setIsCartModalOpen(false)}>✕</button>
@@ -342,7 +332,7 @@ export default function App() {
                     >
                       <div>
                         <strong>{product.name}</strong>
-                        <div style={{ color: '#34d399', fontSize: '0.85rem' }}>
+                        <div style={{ color: 'var(--accent-emerald)', fontSize: '0.85rem' }}>
                           {formatCurrency(product.price)}
                         </div>
                       </div>
@@ -366,7 +356,7 @@ export default function App() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 }}>
                   <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Tổng thanh toán:</span>
-                  <span style={{ fontSize: '1.4rem', fontWeight: 700, color: '#34d399' }}>
+                  <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--accent-emerald)' }}>
                     {formatCurrency(totalPrice)}
                   </span>
                 </div>

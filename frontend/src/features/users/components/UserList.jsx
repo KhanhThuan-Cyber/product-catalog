@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import Button from '../../../components/common/Button'
 import Modal from '../../../components/common/Modal'
 
@@ -77,7 +77,7 @@ export default function UserList({
                       <strong>{u.full_name || '—'}</strong>
                       <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                         <i className="fa-regular fa-envelope" style={{ marginRight: 4 }}></i>
-                        {u.email} {isCurrent && <span style={{ color: '#34d399' }}>(Bạn)</span>}
+                        {u.email} {isCurrent && <span style={{ color: 'var(--accent-emerald)' }}>(Bạn)</span>}
                       </div>
                     </div>
                   </td>

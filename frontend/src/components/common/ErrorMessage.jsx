@@ -8,7 +8,7 @@ export default function ErrorMessage({ message, onRetry }) {
         border: '1px solid var(--danger)',
         borderRadius: 'var(--radius)',
         padding: '16px 20px',
-        color: '#fca5a5',
+        color: 'var(--accent-red)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -24,7 +24,7 @@ export default function ErrorMessage({ message, onRetry }) {
         <button
           className="btn btn-sm btn-outline"
           onClick={onRetry}
-          style={{ borderColor: 'var(--danger)', color: '#fff' }}
+          style={{ borderColor: 'var(--danger)', color: 'var(--accent-red)' }}
         >
           <i className="fa-solid fa-arrows-rotate"></i> Thử lại
         </button>

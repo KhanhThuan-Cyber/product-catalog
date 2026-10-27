@@ -91,7 +91,7 @@ export default function ProductList({
 
                 <td>
                   <div>
-                    <strong style={{ color: '#f8fafc' }}>{p.name}</strong>
+                    <strong style={{ color: 'var(--text-main)' }}>{p.name}</strong>
                     {p.description && (
                       <div
                         style={{
@@ -115,12 +115,12 @@ export default function ProductList({
                   </span>
                 </td>
                 <td>
-                  <span style={{ fontWeight: 600, color: '#34d399' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--accent-emerald)' }}>
                     {formatCurrency(p.price)}
                   </span>
                 </td>
                 <td>
-                  <span style={{ color: isOutOfStock ? '#ef4444' : 'var(--text-main)', fontWeight: isOutOfStock ? 700 : 400 }}>
+                  <span style={{ color: isOutOfStock ? 'var(--accent-red)' : 'var(--text-main)', fontWeight: isOutOfStock ? 700 : 400 }}>
                     {p.stock}
                   </span>
                 </td>

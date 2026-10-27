@@ -38,7 +38,7 @@
 
 .btn-primary {
   background-color: var(--primary);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .btn-primary:hover:not(:disabled) {
   background-color: var(--primary-hover);
@@ -50,12 +50,12 @@
   border-color: var(--border);
 }
 .btn-secondary:hover:not(:disabled) {
-  background-color: #475569;
+  background-color: var(--secondary-hover);
 }
 
 .btn-success {
   background-color: var(--success);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .btn-success:hover:not(:disabled) {
   background-color: var(--success-hover);
@@ -63,7 +63,7 @@
 
 .btn-danger {
   background-color: var(--danger);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .btn-danger:hover:not(:disabled) {
   background-color: var(--danger-hover);
@@ -76,7 +76,7 @@
 }
 .btn-outline:hover:not(:disabled) {
   border-color: var(--border-focus);
-  color: #60a5fa;
+  color: var(--accent-blue);
 }
 
 .btn-sm {
@@ -111,6 +111,10 @@ input, select, textarea {
   transition: border-color 0.2s;
 }
 
+input::placeholder, textarea::placeholder {
+  color: var(--text-dim);
+}
+
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--border-focus);
@@ -143,7 +147,7 @@ td {
 }
 
 tr:hover td {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: var(--row-hover);
 }
 
 /* Badges & Tags */
@@ -156,8 +160,8 @@ tr:hover td {
   font-size: 0.75rem;
   font-weight: 600;
 }
-.badge-active { background-color: rgba(16, 185, 129, 0.2); color: #34d399; }
-.badge-inactive { background-color: rgba(239, 68, 68, 0.2); color: #f87171; }
+.badge-active { background-color: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
+.badge-inactive { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
 
 .role-tag {
   display: inline-flex;
@@ -179,7 +183,7 @@ tr:hover td {
 
 /* Role Summary Bar */
 .roles-summary-bar {
-  background-color: rgba(15, 23, 42, 0.6);
+  background-color: var(--bg-summary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 18px;
@@ -213,7 +217,7 @@ tr:hover td {
 }
 
 .role-chip-card:hover {
-  border-color: #64748b;
+  border-color: var(--text-dim);
   transform: translateY(-1px);
 }
 
@@ -247,7 +251,7 @@ tr:hover td {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: var(--overlay-scrim);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -299,7 +303,7 @@ tr:hover td {
   border-radius: var(--radius);
 }
 .modal-close:hover {
-  color: #fff;
+  color: var(--text-heading);
   background-color: var(--bg-card-secondary);
 }
 
@@ -319,7 +323,7 @@ tr:hover td {
   right: 24px;
   padding: 12px 20px;
   border-radius: var(--radius);
-  color: #fff;
+  color: var(--text-on-accent);
   font-weight: 500;
   z-index: 2000;
   box-shadow: var(--shadow-lg);
@@ -359,9 +363,81 @@ tr:hover td {
 .page-btn.active {
   background-color: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .page-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  white-space: nowrap;
+}
+
+/* =============================================
+   API Logger
+   ============================================= */
+.logger-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s;
+}
+.log-item:last-child {
+  border-bottom: none;
+}
+.log-item:hover {
+  background-color: var(--hover-overlay);
+}
+
+/* Status badge */
+.log-status {
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.log-status.s-200 {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+}
+.log-status.s-400 {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: var(--accent-amber);
+}
+.log-status.s-401 {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+
+/* Logger pre blocks */
+.logger-pre {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  overflow-x: auto;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  max-height: 200px;
 }

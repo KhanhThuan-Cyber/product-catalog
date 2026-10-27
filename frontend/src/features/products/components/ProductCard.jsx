@@ -74,10 +74,10 @@ export default function ProductCard({
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#34d399' }}>
+          <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-emerald)' }}>
             {formatCurrency(product.price)}
           </span>
-          <span style={{ fontSize: '0.75rem', color: isOutOfStock ? '#ef4444' : 'var(--text-muted)' }}>
+          <span style={{ fontSize: '0.75rem', color: isOutOfStock ? 'var(--accent-red)' : 'var(--text-muted)' }}>
             {isOutOfStock ? 'Hết hàng' : `Kho: ${product.stock}`}
           </span>
         </div>

@@ -25,7 +25,7 @@
 .brand h1 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #60a5fa;
+  color: var(--accent-sky);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -87,11 +87,11 @@
 
 .admin-nav-btn:hover {
   color: var(--text-main);
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--hover-overlay);
 }
 
 .admin-nav-btn.active {
-  color: #fff;
+  color: var(--text-on-accent);
   background-color: var(--primary);
   border-color: var(--primary);
 }
@@ -115,4 +115,88 @@
 .breadcrumbs .crumb-current {
   color: var(--text-main);
   font-weight: 500;
+}
+
+/* Product card (storefront) */
+.product-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.product-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-color: var(--bg-card-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.placeholder-icon {
+  font-size: 2.5rem;
+  color: var(--text-dim);
+}
+
+.card-cat-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+/* Hero search bar */
+.hero-banner {
+  background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 28px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.hero-search-bar {
+  display: flex;
+  max-width: 650px;
+  margin: 0 auto;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 4px 6px;
+  align-items: center;
+}
+
+.hero-search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  color: var(--text-main);
+}
+
+.hero-search-bar input:focus {
+  outline: none;
+  border: none;
+}
+
+/* Admin content area */
+.admin-content {
+  /* spacing only, no background — inherits from page */
+}
+
+/* Empty state */
+.empty-box {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-muted);
 }
